@@ -1,27 +1,27 @@
 {
-  "name": "@berrysdk/wa-message",
-  "version": "0.1.0",
-  "description": "Rendering-aware WhatsApp message builders for Berry Protocol.",
-  "author": "Lipe Devv and Berry Protocol",
-  "license": "Apache-2.0",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "dependencies": {
-    "@berrysdk/events": "0.1.0",
-    "@berrysdk/proto": "0.1.0",
-    "baileys": "7.0.0-rc10"
-  }
+    "name":  "@berrysdk/wa-message",
+    "version":  "0.1.1",
+    "description":  "Rendering-aware WhatsApp message builders for Berry Protocol.",
+    "author":  "Lipe Devv and Berry Protocol",
+    "license":  "Apache-2.0",
+    "type":  "module",
+    "main":  "dist/index.js",
+    "types":  "dist/index.d.ts",
+    "files":  [
+                  "dist"
+              ],
+    "exports":  {
+                    ".":  {
+                              "types":  "./dist/index.d.ts",
+                              "import":  "./dist/index.js"
+                          }
+                },
+    "publishConfig":  {
+                          "access":  "public"
+                      },
+    "dependencies":  {
+                         "@berrysdk/events":  "0.1.1",
+                         "@berrysdk/proto":  "0.1.1",
+                         "baileys":  "7.0.0-rc10"
+                     }
 }

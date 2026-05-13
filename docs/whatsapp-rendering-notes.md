@@ -396,3 +396,48 @@ The working rule discovered so far is:
 - use native-flow `cta_copy` for copy-code buttons
 - use native-flow `cta_url` for CTA URL buttons
 - use native-flow only as an explicit advanced path with the correct `additionalNodes`
+
+## AI label
+
+Status: working in real private-chat tests
+
+Berry now supports an experimental AI label path in the patched local Baileys flow.
+
+Working usage:
+
+```ts
+await sock.sendMessage("5511999999999@s.whatsapp.net", {
+  text: "Ola! Essa mensagem deve aparecer com label de AI.",
+  ai: true,
+});
+```
+
+Rules validated so far:
+
+- only private chats are allowed
+- groups, newsletters, status, and non-user JIDs must be blocked
+- the message must receive `messageContextInfo.supportPayload`
+- the relay must include:
+
+```xml
+<bot biz_bot="1" />
+```
+
+Implementation status in this workspace:
+
+- `ai?: boolean` was added to the accepted message content type in the local patched Baileys install
+- `sendMessage(...)` removes `content.ai` before the final payload is generated
+- `relayMessage(...)` injects the `bot` additional node
+- BerryProtocol forwards `ai: true` on supported `sendMessage(...)` paths
+
+Local test files:
+
+- [examples/sdk/test-baileys-ai-label.js](C:/Users/felip/BerryProtocol/examples/sdk/test-baileys-ai-label.js)
+- [examples/sdk/test-berry-ai-label.ts](C:/Users/felip/BerryProtocol/examples/sdk/test-berry-ai-label.ts)
+
+Distribution note:
+
+- the publish-safe strategy now lives in [packages/socket/scripts/patch-installed-baileys.mjs](C:/Users/felip/BerryProtocol/packages/socket/scripts/patch-installed-baileys.mjs)
+- `@berrysdk/socket` runs this patch in `postinstall`
+- this makes the AI label patch travel with the published Berry packages that depend on `@berrysdk/socket`
+- the feature should still be treated as experimental because WhatsApp can change the required metadata at any time

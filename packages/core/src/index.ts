@@ -48,6 +48,7 @@ export interface BerryClientOptions {
 type BerryMediaSource = Buffer | { url: string | URL };
 
 export interface BerrySendMessageContent {
+  ai?: boolean;
   text?: string;
   image?: BerryMediaSource;
   audio?: BerryMediaSource;
@@ -144,6 +145,14 @@ export class BerryClient {
     return this;
   }
 
+  off<EventName extends keyof BerryEventMap>(
+    event: EventName,
+    listener: (payload: BerryEventMap[EventName]) => void,
+  ): this {
+    this.bus.off(event, listener);
+    return this;
+  }
+
   async connect(auth?: BerryAuthOptions): Promise<void> {
     await this.sessions.get(this.options.sessionId);
     await this.socket.connect(auth);
@@ -226,6 +235,28 @@ export class BerryClient {
     return this.sendMessage(to, { list });
   }
 
+  async sendLegacyButtons(to: string, payload: ButtonsPayload): Promise<OutgoingMessage> {
+    return this.queue.enqueue(async () => {
+      const message: OutgoingMessage = {
+        id: randomUUID(),
+        to,
+        timestamp: new Date().toISOString(),
+        ack: "pending",
+        type: "buttons",
+        buttons: payload,
+      };
+
+      const result = await this.socket.sendLegacyButtonsMessage(to, payload);
+      const sent = {
+        ...message,
+        id: result.key.id ?? message.id,
+        ack: "sent" as const,
+      };
+      this.bus.emit("message.sent", sent);
+      return sent;
+    });
+  }
+
   async sendReaction(
     to: string,
     emoji: string,
@@ -264,6 +295,20 @@ export class BerryClient {
           },
         ],
       },
+    });
+  }
+
+  async editMessage(to: string, messageId: string, text: string): Promise<OutgoingMessage> {
+    return this.queue.enqueue(async () => {
+      const message = createTextMessage(to, text);
+      const result = await this.socket.editMessage(to, messageId, text);
+      const sent = {
+        ...message,
+        id: result.key.id ?? message.id,
+        ack: "sent" as const,
+      };
+      this.bus.emit("message.sent", sent);
+      return sent;
     });
   }
 
@@ -311,7 +356,7 @@ export class BerryClient {
       const message = createTextMessage(to, text);
       return {
         message,
-        dispatch: () => this.socket.sendBaileysMessage(to, { text }),
+        dispatch: () => this.socket.sendBaileysMessage(to, { text, ...(content.ai ? { ai: true } : {}) }),
       };
     }
 
@@ -448,7 +493,11 @@ export class BerryClient {
       );
       return {
         message,
-        dispatch: () => this.socket.sendBaileysMessage(to, { react: content.react! }),
+        dispatch: () =>
+          this.socket.sendBaileysMessage(to, {
+            react: content.react!,
+            ...(content.ai ? { ai: true } : {}),
+          }),
       };
     }
 
@@ -461,7 +510,11 @@ export class BerryClient {
       };
       return {
         message: createLocationMessage(to, location),
-        dispatch: () => this.socket.sendBaileysMessage(to, { location: content.location! }),
+        dispatch: () =>
+          this.socket.sendBaileysMessage(to, {
+            location: content.location!,
+            ...(content.ai ? { ai: true } : {}),
+          }),
       };
     }
 
@@ -472,7 +525,11 @@ export class BerryClient {
       };
       return {
         message: createContactMessage(to, contact),
-        dispatch: () => this.socket.sendBaileysMessage(to, { contacts: content.contacts! }),
+        dispatch: () =>
+          this.socket.sendBaileysMessage(to, {
+            contacts: content.contacts!,
+            ...(content.ai ? { ai: true } : {}),
+          }),
       };
     }
 
@@ -567,5 +624,9 @@ export class BerryClient {
     });
   }
 }
+
+export class BerryProtocol extends BerryClient {}
+
+export default BerryProtocol;
 
 export * from "@berrysdk/events";

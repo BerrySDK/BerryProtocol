@@ -246,6 +246,35 @@ export class BerrySocket {
     return this.sendMessage(to, content as MessageContent);
   }
 
+  async editMessage(to: string, messageId: string, text: string): Promise<WAMessage> {
+    return this.sendBaileysMessage(to, {
+      text,
+      edit: {
+        remoteJid: to,
+        fromMe: true,
+        id: messageId,
+      },
+    });
+  }
+
+  async sendLegacyButtonsMessage(to: string, buttons: ButtonsPayload): Promise<WAMessage> {
+    if (!this.sock?.user?.id) {
+      throw new Error("Socket is not connected.");
+    }
+
+    const content = buttonsPayloadToLegacyButtonsMessageContent(buttons);
+    const fullMessage = generateWAMessageFromContent(to, content, {
+      userJid: this.sock.user.id,
+    });
+    this.logOutgoingMessage("buttons-legacy", fullMessage);
+
+    await this.sock.relayMessage(to, fullMessage.message!, {
+      messageId: fullMessage.key.id!,
+    });
+
+    return fullMessage as WAMessage;
+  }
+
   async sendInteractiveMessage(to: string, interactive: InteractivePayload): Promise<WAMessage> {
     if (!this.sock?.user?.id) {
       throw new Error("Socket is not connected.");

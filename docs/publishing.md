@@ -1,10 +1,3 @@
-/**
- * @module modulo
- * @description Enhanced message sending capabilities including albums, cards,
- * interactive buttons, and rich media support beyond standard WhatsApp messages.
- * @license Apache-2.0
- * @author Lipe Devv and Berry Protocol
- */
 # Publishing Guide
 
 This repository is organized so the public Berry Protocol packages can be published without relying on local `file:` dependencies.
@@ -19,6 +12,7 @@ This repository is organized so the public Berry Protocol packages can be publis
 ## Public packages
 
 - `@berrysdk/auth`
+- `@berrysdk/berry-otp`
 - `@berrysdk/cli`
 - `@berrysdk/core`
 - `@berrysdk/events`
@@ -29,6 +23,8 @@ This repository is organized so the public Berry Protocol packages can be publis
 - `@berrysdk/socket`
 - `@berrysdk/store`
 - `@berrysdk/wa-message`
+- `berryotp`
+- `berryprotocol`
 
 ## Before publishing
 
@@ -70,8 +66,11 @@ Suggested order:
 7. `@berrysdk/wa-message`
 8. `@berrysdk/socket`
 9. `@berrysdk/core`
-10. `@berrysdk/gateway`
-11. `@berrysdk/cli`
+10. `@berrysdk/berry-otp`
+11. `berryotp`
+12. `berryprotocol`
+13. `@berrysdk/gateway`
+14. `@berrysdk/cli`
 
 Example:
 

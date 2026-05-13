@@ -55,6 +55,9 @@ If you do not provide one, BerryProtocol generates one automatically.
 ```text
 packages/
   auth/
+  berry-otp/
+  berryotp/
+  berryprotocol/
   cli/
   core/
   events/
@@ -66,6 +69,7 @@ packages/
   store/
   wa-message/
 examples/
+  npm-consumer/
   rest/
   sdk/
 scripts/
@@ -80,10 +84,62 @@ _reference_baileys2/
 Public SDK:
 
 - `BerryClient`
+- `BerryProtocol`
 - auth entrypoints
 - queueing
 - event bridge
 - media send helpers
+
+`BerryProtocol` is an official alias for `BerryClient`, so you can use the SDK like:
+
+```ts
+import { BerryProtocol } from "@berrysdk/core";
+
+const client = new BerryProtocol({
+  sessionId: "store-001",
+});
+```
+
+### `berryprotocol`
+
+Facade package for consumers who want the SDK entrypoint without the scope prefix.
+
+Important:
+
+- npm package names must be lowercase, so the publishable package name is `berryprotocol`
+- inside the package, the class is still `BerryProtocol`
+
+Usage:
+
+```ts
+import BerryProtocol from "berryprotocol";
+
+const client = new BerryProtocol({
+  sessionId: "store-001",
+});
+```
+
+### `berryotp`
+
+Facade package for consumers who want BerryOTP without the scope prefix.
+
+Usage:
+
+```ts
+import { BerryOTP } from "berryotp";
+```
+
+### `@berrysdk/berry-otp`
+
+Official OTP package:
+
+- login flow helpers
+- password reset flow helpers
+- 2FA flow helpers
+- native-flow copy-code mode
+- stable fallback mode
+- expiration editing
+- deny/cancel handling
 
 ### `@berrysdk/socket`
 
@@ -148,6 +204,45 @@ npm install
 
 After install, BerryProtocol runs `postinstall` and patches local Baileys ESM imports for this environment.
 
+## Installing from npm
+
+To consume the published packages without using this monorepo locally:
+
+```bash
+npm install @berrysdk/core
+```
+
+Or, if you want the facade entrypoint:
+
+```bash
+npm install berryprotocol
+```
+
+For OTP via facade package:
+
+```bash
+npm install berryotp
+```
+
+There is also a standalone consumer example in:
+
+- [examples/npm-consumer/test-from-npm.mjs](C:/Users/felip/BerryProtocol/examples/npm-consumer/test-from-npm.mjs)
+- [examples/npm-consumer/package.json](C:/Users/felip/BerryProtocol/examples/npm-consumer/package.json)
+
+Run it with:
+
+```bash
+cd examples/npm-consumer
+npm install
+node test-from-npm.mjs
+```
+
+Set the destination first:
+
+```powershell
+$env:BERRY_TEST_TO="5511999999999@s.whatsapp.net"
+```
+
 ## Build
 
 ```bash
@@ -168,12 +263,55 @@ Currently validated rendering paths include:
 - native-flow `cta_copy`
 - native-flow `cta_url`
 
+## AI label notes
+
+Baileys in this workspace now has an experimental patch for AI-labeled private messages.
+
+Usage:
+
+```ts
+await sock.sendMessage("5511999999999@s.whatsapp.net", {
+  text: "Ola! Essa mensagem deve aparecer com label de AI.",
+  ai: true,
+});
+```
+
+Rules:
+
+- only private chats are allowed
+- group, newsletter, status, and non-user JIDs are blocked
+- Baileys injects `messageContextInfo.supportPayload`
+- Baileys relays an additional `<bot biz_bot="1" />` node
+
+Local test files:
+
+- [examples/sdk/test-baileys-ai-label.js](C:/Users/felip/BerryProtocol/examples/sdk/test-baileys-ai-label.js)
+- [examples/sdk/test-berry-ai-label.ts](C:/Users/felip/BerryProtocol/examples/sdk/test-berry-ai-label.ts)
+
+Current status:
+
+- validated in local private-chat tests
+- experimental
+- distributed through the Berry socket package postinstall patch for Baileys
+
+## BerryOTP notes
+
+`@berrysdk/berry-otp` works without the official WhatsApp API. It uses the same native-flow and `additionalNodes` strategy validated in real tests against WhatsApp Web `2.3000.x`.
+
+Important caveats:
+
+- protocol behavior can change at any time
+- `copy-code` is the recommended OTP mode today
+- `stable` mode exists as fallback
+- `editOnExpire` depends on `client.editMessage(...)`
+- successful verification marks the OTP as `used`, so it will not later expire-edit
+
 ## SDK quick start
 
 ```ts
-import { BerryClient } from "@berrysdk/core";
+import { BerryProtocol } from "@berrysdk/core";
 
-const client = new BerryClient({
+const client = new BerryProtocol({
   sessionId: "store-001",
 });
 
@@ -182,6 +320,31 @@ client.on("auth.qr", ({ value }) => console.log("qr payload:", value));
 client.on("auth.pairing_code", ({ code }) => console.log("pairing:", code));
 client.on("connection.open", (state) => console.log("open", state));
 client.on("message.received", (message) => console.log(message));
+```
+
+## BerryOTP quick start
+
+```ts
+import { BerryProtocol } from "@berrysdk/core";
+import { BerryOTP } from "@berrysdk/berry-otp";
+
+const client = new BerryProtocol({
+  sessionId: "otp-session",
+});
+
+const otp = BerryOTP.createLoginFlow(client, {
+  issuer: "BerryProtocol",
+  ttlMs: 2 * 60 * 1000,
+  mode: "copy-code",
+  editOnExpire: true,
+});
+
+await client.connectWithQr();
+
+const sent = await otp.sendLoginCode("5511999999999@s.whatsapp.net", {
+  userId: "test-user",
+  metadata: { source: "sdk-test" },
+});
 ```
 
 ## SDK authentication examples

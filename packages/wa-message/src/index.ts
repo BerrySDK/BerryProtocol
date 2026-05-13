@@ -15,6 +15,67 @@ import {
 } from "@berrysdk/events";
 import { proto, type BinaryNode, type WAMessage } from "baileys";
 
+const parseJsonObject = (value?: string | null): Record<string, unknown> | null => {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+};
+
+const extractButtonSelection = (
+  message: NonNullable<WAMessage["message"]>,
+): {
+  buttonId?: string;
+  selectedButtonId?: string;
+  rawButtonParamsJson?: string;
+} => {
+  const buttonsResponseId = message.buttonsResponseMessage?.selectedButtonId;
+  if (buttonsResponseId) {
+    return {
+      buttonId: buttonsResponseId,
+      selectedButtonId: buttonsResponseId,
+    };
+  }
+
+  const templateButtonId = message.templateButtonReplyMessage?.selectedId;
+  if (templateButtonId) {
+    return {
+      buttonId: templateButtonId,
+      selectedButtonId: templateButtonId,
+    };
+  }
+
+  const listRowId = message.listResponseMessage?.singleSelectReply?.selectedRowId;
+  if (listRowId) {
+    return {
+      buttonId: listRowId,
+      selectedButtonId: listRowId,
+    };
+  }
+
+  const paramsJson = message.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson;
+  const parsedParams = parseJsonObject(paramsJson);
+  if (parsedParams) {
+    const selectedId = [parsedParams.id, parsedParams.button_id, parsedParams.selected_id].find(
+      (candidate) => typeof candidate === "string" && candidate.length > 0,
+    ) as string | undefined;
+
+    return {
+      buttonId: selectedId,
+      selectedButtonId: selectedId,
+      rawButtonParamsJson: paramsJson ?? undefined,
+    };
+  }
+
+  return {};
+};
+
 export const ackFromWebMessageStatus = (status?: number | null): MessageAck["ack"] => {
   switch (status) {
     case proto.WebMessageInfo.Status.SERVER_ACK:
@@ -329,18 +390,20 @@ export const extractButtonsPayload = (
 
 export const normalizeIncomingMessage = (waMessage: WAMessage): IncomingMessage | null => {
   const key = waMessage.key;
+  const message = waMessage.message;
+  if (!message) {
+    return null;
+  }
+
+  const selection = extractButtonSelection(message);
   const base = {
     id: key.id ?? randomUUID(),
     to: key.remoteJid ?? "",
     from: key.participant ?? key.remoteJid ?? "",
     timestamp: new Date(Number(waMessage.messageTimestamp ?? Date.now()) * 1000).toISOString(),
     ack: ackFromWebMessageStatus(waMessage.status),
+    ...selection,
   } as const;
-
-  const message = waMessage.message;
-  if (!message) {
-    return null;
-  }
 
   if (message.conversation || message.extendedTextMessage?.text) {
     return {

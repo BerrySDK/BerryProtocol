@@ -77,7 +77,7 @@ export interface ContactPayload {
 export interface ButtonRow {
   id: string;
   title: string;
-  kind?: "reply" | "copy_code" | "cta_url";
+  kind?: "reply" | "quick_reply" | "copy_code" | "cta_url";
   code?: string;
   url?: string;
   nativeFlowName?: string;
@@ -156,6 +156,9 @@ export interface BaseMessage {
   from?: string;
   timestamp: string;
   ack: AckStatus;
+  buttonId?: string;
+  selectedButtonId?: string;
+  rawButtonParamsJson?: string;
   type:
     | "text"
     | "image"

@@ -1,0 +1,13 @@
+{
+  "name": "berrysdk-npm-consumer-example",
+  "private": true,
+  "type": "module",
+  "description": "Example consumer app that installs Berry SDK packages from npm.",
+  "scripts": {
+    "start": "node test-from-npm.mjs"
+  },
+  "dependencies": {
+    "berryprotocol": "^0.1.3",
+    "berryotp": "^0.1.3"
+  }
+}
