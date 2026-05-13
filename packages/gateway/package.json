@@ -1,6 +1,6 @@
 {
     "name":  "@berrysdk/gateway",
-    "version":  "0.1.1",
+    "version":  "0.1.6",
     "description":  "HTTP gateway for multi-instance Berry Protocol control.",
     "author":  "Lipe Devv and Berry Protocol",
     "license":  "Apache-2.0",
@@ -20,7 +20,7 @@
                           "access":  "public"
                       },
     "dependencies":  {
-                         "@berrysdk/core":  "0.1.1",
+                         "@berrysdk/core":  "0.1.6",
                          "express":  "^5.1.0",
                          "pino":  "^9.6.0"
                      }

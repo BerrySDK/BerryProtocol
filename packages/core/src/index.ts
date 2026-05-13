@@ -358,7 +358,8 @@ export class BerryClient {
       const message = createTextMessage(to, text);
       return {
         message,
-        dispatch: () => this.socket.sendBaileysMessage(to, { text, ...(content.ai ? { ai: true } : {}) }),
+        dispatch: () =>
+          this.socket.sendTransportMessage(to, { text, ...(content.ai ? { ai: true } : {}) }),
       };
     }
 
@@ -378,7 +379,7 @@ export class BerryClient {
           media,
         },
         dispatch: () =>
-          this.socket.sendBaileysMessage(to, {
+          this.socket.sendTransportMessage(to, {
             ...content,
             image: media.buffer!,
             caption: media.caption,
@@ -404,7 +405,7 @@ export class BerryClient {
           media,
         },
         dispatch: () =>
-          this.socket.sendBaileysMessage(to, {
+          this.socket.sendTransportMessage(to, {
             ...content,
             audio: media.buffer!,
             mimetype: media.mimetype,
@@ -428,7 +429,7 @@ export class BerryClient {
           media,
         },
         dispatch: () =>
-          this.socket.sendBaileysMessage(to, {
+          this.socket.sendTransportMessage(to, {
             ...content,
             document: media.buffer!,
             caption: media.caption,
@@ -496,7 +497,7 @@ export class BerryClient {
       return {
         message,
         dispatch: () =>
-          this.socket.sendBaileysMessage(to, {
+          this.socket.sendTransportMessage(to, {
             react: content.react!,
             ...(content.ai ? { ai: true } : {}),
           }),
@@ -513,7 +514,7 @@ export class BerryClient {
       return {
         message: createLocationMessage(to, location),
         dispatch: () =>
-          this.socket.sendBaileysMessage(to, {
+          this.socket.sendTransportMessage(to, {
             location: content.location!,
             ...(content.ai ? { ai: true } : {}),
           }),
@@ -528,7 +529,7 @@ export class BerryClient {
       return {
         message: createContactMessage(to, contact),
         dispatch: () =>
-          this.socket.sendBaileysMessage(to, {
+          this.socket.sendTransportMessage(to, {
             contacts: content.contacts!,
             ...(content.ai ? { ai: true } : {}),
           }),
@@ -564,7 +565,7 @@ export class BerryClient {
       };
     }
 
-    throw new Error("Only Buffer or { url } media inputs are supported for Baileys-compatible sends.");
+    throw new Error("Only Buffer or { url } media inputs are supported for BerryProtocol-compatible sends.");
   }
 
   private bindInternals(): void {

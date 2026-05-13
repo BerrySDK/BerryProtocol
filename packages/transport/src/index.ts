@@ -9,16 +9,17 @@ export {
   default,
   DisconnectReason,
   downloadMediaMessage,
+  fetchLatestBaileysVersion as fetchLatestBerryWebVersion,
   fetchLatestBaileysVersion,
   generateWAMessageFromContent,
   makeCacheableSignalKeyStore,
   proto,
   useMultiFileAuthState,
-} from "baileys";
+} from "../vendor/lib/index.js";
 
 export type {
   AnyMessageContent,
   BinaryNode,
   WAMessage,
   WASocket,
-} from "baileys";
+} from "../vendor/lib/index.js";

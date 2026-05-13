@@ -11,7 +11,7 @@ import makeWASocket, {
   type AnyMessageContent,
   DisconnectReason,
   downloadMediaMessage,
-  fetchLatestBaileysVersion,
+  fetchLatestBerryWebVersion,
   generateWAMessageFromContent,
   makeCacheableSignalKeyStore,
   useMultiFileAuthState,
@@ -242,12 +242,12 @@ export class BerrySocket {
     return result;
   }
 
-  async sendBaileysMessage(to: string, content: AnyMessageContent): Promise<WAMessage> {
+  async sendTransportMessage(to: string, content: AnyMessageContent): Promise<WAMessage> {
     return this.sendMessage(to, content as MessageContent);
   }
 
   async editMessage(to: string, messageId: string, text: string): Promise<WAMessage> {
-    return this.sendBaileysMessage(to, {
+    return this.sendTransportMessage(to, {
       text,
       edit: {
         remoteJid: to,
@@ -391,7 +391,7 @@ export class BerrySocket {
   private async createSocketAndWaitUntilOpen(): Promise<"open" | "restart_required"> {
     const sessionDir = await this.ensureAuthDir();
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-    const { version } = await fetchLatestBaileysVersion();
+    const { version } = await fetchLatestBerryWebVersion();
 
     return new Promise<"open" | "restart_required">((resolve, reject) => {
       const sock = makeWASocket({

@@ -67,47 +67,19 @@ packages/
   protocol/  # workspace folder for @berrysdk/proto
   socket/
   store/
+  transport/
   wa-message/
 examples/
   npm-consumer/
   rest/
   sdk/
-scripts/
-  patch-baileys-esm.mjs
-_reference_baileys2/
 ```
 
 ## Packages
 
-### `@berrysdk/core`
-
-Public SDK:
-
-- `BerryClient`
-- `BerryProtocol`
-- auth entrypoints
-- queueing
-- event bridge
-- media send helpers
-
-`BerryProtocol` is an official alias for `BerryClient`, so you can use the SDK like:
-
-```ts
-import { BerryProtocol } from "@berrysdk/core";
-
-const client = new BerryProtocol({
-  sessionId: "store-001",
-});
-```
-
 ### `berryprotocol`
 
-Facade package for consumers who want the SDK entrypoint without the scope prefix.
-
-Important:
-
-- npm package names must be lowercase, so the publishable package name is `berryprotocol`
-- inside the package, the class is still `BerryProtocol`
+Main public SDK package for consumers.
 
 Usage:
 
@@ -121,12 +93,33 @@ const client = new BerryProtocol({
 
 ### `berryotp`
 
-Facade package for consumers who want BerryOTP without the scope prefix.
+Main public OTP package for consumers.
 
 Usage:
 
 ```ts
 import { BerryOTP } from "berryotp";
+```
+
+### `@berrysdk/core`
+
+Internal public engine package used by `berryprotocol`:
+
+- `BerryClient`
+- `BerryProtocol`
+- auth entrypoints
+- queueing
+- event bridge
+- media send helpers
+
+`BerryProtocol` is an official alias for `BerryClient`, so advanced consumers can also use:
+
+```ts
+import { BerryProtocol } from "@berrysdk/core";
+
+const client = new BerryProtocol({
+  sessionId: "store-001",
+});
 ```
 
 ### `@berrysdk/berry-otp`
@@ -145,11 +138,19 @@ Official OTP package:
 
 WhatsApp transport adapter:
 
-- Baileys socket integration
+- BerrySDK transport integration
 - auth mode handling
 - reconnect handling
 - event normalization
 - sync bridging
+
+### `@berrysdk/transport`
+
+Internal BerrySDK engine package:
+
+- wraps the WhatsApp Web runtime used by the SDK
+- owns the AI label patch/runtime behavior
+- isolates the low-level transport from the public `berryprotocol` package
 
 ### `@berrysdk/events`
 
@@ -202,17 +203,9 @@ Developer CLI for connect and send-text flows.
 npm install
 ```
 
-After install, BerryProtocol runs `postinstall` and patches local Baileys ESM imports for this environment.
-
 ## Installing from npm
 
 To consume the published packages without using this monorepo locally:
-
-```bash
-npm install @berrysdk/core
-```
-
-Or, if you want the facade entrypoint:
 
 ```bash
 npm install berryprotocol
@@ -265,7 +258,7 @@ Currently validated rendering paths include:
 
 ## AI label notes
 
-Baileys in this workspace now has an experimental patch for AI-labeled private messages.
+BerryProtocol now includes an experimental private-chat AI label path through the internal Berry transport engine.
 
 Usage:
 
@@ -280,8 +273,8 @@ Rules:
 
 - only private chats are allowed
 - group, newsletter, status, and non-user JIDs are blocked
-- Baileys injects `messageContextInfo.supportPayload`
-- Baileys relays an additional `<bot biz_bot="1" />` node
+- Berry transport injects `messageContextInfo.supportPayload`
+- Berry transport relays an additional `<bot biz_bot="1" />` node
 
 Local test files:
 
@@ -292,7 +285,7 @@ Current status:
 
 - validated in local private-chat tests
 - experimental
-- distributed through the Berry socket package postinstall patch for Baileys
+- distributed through `@berrysdk/transport`
 
 ## BerryOTP notes
 
@@ -309,7 +302,7 @@ Important caveats:
 ## SDK quick start
 
 ```ts
-import { BerryProtocol } from "@berrysdk/core";
+import BerryProtocol from "berryprotocol";
 
 const client = new BerryProtocol({
   sessionId: "store-001",
@@ -325,8 +318,8 @@ client.on("message.received", (message) => console.log(message));
 ## BerryOTP quick start
 
 ```ts
-import { BerryProtocol } from "@berrysdk/core";
-import { BerryOTP } from "@berrysdk/berry-otp";
+import BerryProtocol from "berryprotocol";
+import { BerryOTP } from "berryotp";
 
 const client = new BerryProtocol({
   sessionId: "otp-session",
@@ -407,7 +400,7 @@ await client.sendList("5516999999999@s.whatsapp.net", {
 });
 ```
 
-### Baileys-style `sendMessage`
+### Low-level `sendMessage`
 
 ```ts
 await client.sendMessage("5516999999999@s.whatsapp.net", {
@@ -415,7 +408,7 @@ await client.sendMessage("5516999999999@s.whatsapp.net", {
 });
 ```
 
-### Baileys-style `list`
+### Low-level `list`
 
 ```ts
 await client.sendMessage("5516999999999@s.whatsapp.net", {
@@ -439,7 +432,7 @@ await client.sendMessage("5516999999999@s.whatsapp.net", {
 });
 ```
 
-### Baileys-style `interactiveMessage`
+### Low-level `interactiveMessage`
 
 ```ts
 await client.sendMessage("5516999999999@s.whatsapp.net", {
@@ -501,7 +494,7 @@ await client.sendMessage("5516999999999@s.whatsapp.net", {
 - `sendLocation()`
 - `sendContact()`
 
-`sendMessage()` accepts Baileys-style payloads for:
+`sendMessage()` accepts low-level compatible payloads for:
 
 - `text`
 - `image`

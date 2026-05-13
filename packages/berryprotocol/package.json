@@ -1,6 +1,6 @@
 {
     "name":  "berryprotocol",
-    "version":  "0.1.5",
+    "version":  "0.1.6",
     "description":  "Facade package for Berry SDK that exposes BerryProtocol as the main SDK entrypoint.",
     "author":  "Lipe Devv and Berry Protocol",
     "license":  "Apache-2.0",
@@ -23,6 +23,6 @@
                           "access":  "public"
                       },
     "dependencies":  {
-                         "@berrysdk/core":  "0.1.5"
+                         "@berrysdk/core":  "0.1.6"
                      }
 }
