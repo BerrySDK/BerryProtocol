@@ -14,6 +14,7 @@ export {
   generateWAMessageFromContent,
   makeCacheableSignalKeyStore,
   proto,
+  prepareWAMessageMedia,
   useMultiFileAuthState,
 } from "../vendor/lib/index.js";
 

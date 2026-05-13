@@ -22,7 +22,7 @@ Internally it uses a BerrySDK transport engine, while exposing a BerryProtocol A
 - persistent auth state per session
 - reconnect lifecycle
 - SQLite persistence for metadata
-- text, image, audio, document, buttons, list, reaction, location and contact sending
+- text, image, audio, document, buttons, list, carousel, reaction, location and contact sending
 - presence helpers
 - history, chats, contacts and groups sync events
 - CLI and REST examples
@@ -255,6 +255,106 @@ Currently validated rendering paths include:
 - native-flow `quick_reply`
 - native-flow `cta_copy`
 - native-flow `cta_url`
+- interactive carousel cards wrapped in `viewOnceMessage`
+
+## Carousel Messages with Card Types
+
+BerryProtocol supports native WhatsApp carousel messages through:
+
+```ts
+await client.sendCarousel(jid, {
+  text: "Confira nossas pizzas!",
+  footer: "Deslize para ver mais",
+  cards: [
+    {
+      title: "Pizza Calabresa",
+      body: "Calabresa premium",
+      footer: "R$ 39,90",
+      image: {
+        url: "https://example.com/calabresa.jpg",
+      },
+      buttons: [
+        {
+          kind: "quick_reply",
+          id: "pizza_calabresa",
+          title: "Escolher",
+        },
+      ],
+    },
+  ],
+});
+```
+
+You can also use the low-level unified API:
+
+```ts
+await client.sendMessage(jid, {
+  text: "Confira nossas pizzas!",
+  footer: "Deslize para ver mais",
+  cards: [
+    {
+      title: "Pizza Calabresa",
+      body: "Calabresa premium",
+      footer: "R$ 39,90",
+      image: {
+        url: "https://example.com/calabresa.jpg",
+      },
+      buttons: [
+        {
+          kind: "quick_reply",
+          id: "pizza_calabresa",
+          title: "Escolher",
+        },
+      ],
+    },
+  ],
+  carouselCardType: "image",
+});
+```
+
+Supported card capabilities:
+
+- image cards
+- video cards
+- quick reply buttons
+- copy-code buttons
+- cta-url buttons
+- mixed media carousels
+
+Rules:
+
+- maximum `10` cards per carousel
+- each card must include exactly one media source: `image` or `video`
+- `carouselCardType` can be `image`, `video` or `mixed`
+
+Examples:
+
+- [examples/sdk/carousel.ts](C:/Users/felip/BerryProtocol/examples/sdk/carousel.ts)
+- [examples/sdk/carousel-video.ts](C:/Users/felip/BerryProtocol/examples/sdk/carousel-video.ts)
+- [examples/sdk/carousel-mixed.ts](C:/Users/felip/BerryProtocol/examples/sdk/carousel-mixed.ts)
+
+Note:
+
+Carousel messages are internally wrapped in `viewOnceMessage` for better WhatsApp client compatibility.
+
+## Regression Test Script
+
+There is also a broader validation script for message rendering and payload checks:
+
+- [examples/sdk/test-berry-message-regression.ts](C:/Users/felip/BerryProtocol/examples/sdk/test-berry-message-regression.ts)
+
+Run the local validation suite:
+
+```bash
+npx tsx examples/sdk/test-berry-message-regression.ts
+```
+
+Run the live send suite:
+
+```powershell
+$env:BERRY_TEST_TO="5511999999999@s.whatsapp.net"
+npx tsx examples/sdk/test-berry-message-regression.ts
+```
 
 ## AI label notes
 

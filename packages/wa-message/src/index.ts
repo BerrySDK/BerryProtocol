@@ -8,12 +8,27 @@
 import { randomUUID } from "node:crypto";
 import {
   type ButtonsPayload,
+  type CarouselButton,
+  type CarouselMessagePayload,
   type IncomingMessage,
   type InteractivePayload,
   type ListPayload,
   type MessageAck,
 } from "@berrysdk/events";
 import { proto, type BinaryNode, type WAMessage } from "@berrysdk/transport";
+
+type NativeFlowCapableButton = {
+  id?: string;
+  title?: string;
+  kind?: "reply" | "quick_reply" | "copy_code" | "cta_url";
+  code?: string;
+  url?: string;
+  nativeFlowName?: string;
+  buttonParamsJson?: string;
+  name?: string;
+};
+
+type CarouselInteractiveCard = proto.Message.IInteractiveMessage;
 
 const parseJsonObject = (value?: string | null): Record<string, unknown> | null => {
   if (!value) {
@@ -205,6 +220,55 @@ export const buttonsPayloadToTemplateMessageContent = (
   },
 });
 
+export const carouselButtonToNativeFlowButton = (
+  button: NativeFlowCapableButton,
+  fallbackIndex = 0,
+): { name: string; buttonParamsJson: string } => {
+  if (button.nativeFlowName && button.buttonParamsJson) {
+    return {
+      name: button.nativeFlowName,
+      buttonParamsJson: button.buttonParamsJson,
+    };
+  }
+
+  if (button.name && button.buttonParamsJson) {
+    return {
+      name: button.name,
+      buttonParamsJson: button.buttonParamsJson,
+    };
+  }
+
+  if (button.kind === "copy_code") {
+    return {
+      name: "cta_copy",
+      buttonParamsJson: JSON.stringify({
+        display_text: button.title ?? `Copiar ${fallbackIndex + 1}`,
+        copy_code: button.code ?? button.id ?? "",
+      }),
+    };
+  }
+
+  if (button.kind === "cta_url") {
+    const url = button.url ?? "";
+    return {
+      name: "cta_url",
+      buttonParamsJson: JSON.stringify({
+        display_text: button.title ?? `Abrir ${fallbackIndex + 1}`,
+        url,
+        merchant_url: url,
+      }),
+    };
+  }
+
+  return {
+    name: "quick_reply",
+    buttonParamsJson: JSON.stringify({
+      display_text: button.title ?? `Opcao ${fallbackIndex + 1}`,
+      id: button.id ?? `quick_${fallbackIndex + 1}`,
+    }),
+  };
+};
+
 export const buttonsPayloadToNativeFlowInteractiveContent = (
   buttons: ButtonsPayload,
 ): Record<string, unknown> =>
@@ -218,48 +282,40 @@ export const buttonsPayloadToNativeFlowInteractiveContent = (
         }
       : undefined,
     nativeFlowMessage: {
-      buttons: buttons.buttons.map((button) => {
-        if (button.nativeFlowName && button.buttonParamsJson) {
-          return {
-            name: button.nativeFlowName,
-            buttonParamsJson: button.buttonParamsJson,
-          };
-        }
-
-        if (button.kind === "copy_code") {
-          return {
-            name: "cta_copy",
-            buttonParamsJson: JSON.stringify({
-              display_text: button.title,
-              copy_code: button.code ?? button.id,
-            }),
-          };
-        }
-
-        if (button.kind === "cta_url") {
-          const url = button.url ?? "";
-          return {
-            name: "cta_url",
-            buttonParamsJson: JSON.stringify({
-              display_text: button.title,
-              url,
-              merchant_url: url,
-            }),
-          };
-        }
-
-        return {
-          name: "quick_reply",
-          buttonParamsJson: JSON.stringify({
-            display_text: button.title,
-            id: button.id,
-          }),
-        };
-      }),
+      buttons: buttons.buttons.map((button, index) => carouselButtonToNativeFlowButton(button, index)),
       messageParamsJson: "",
       messageVersion: 1,
     },
   });
+
+export const carouselPayloadToMessageContent = (
+  carousel: Pick<CarouselMessagePayload, "text" | "footer"> & {
+    cards: CarouselInteractiveCard[];
+  },
+): Record<string, unknown> => ({
+  viewOnceMessage: {
+    message: {
+      messageContextInfo: {
+        deviceListMetadata: {},
+        deviceListMetadataVersion: 2,
+      },
+      interactiveMessage: proto.Message.InteractiveMessage.create({
+        body: {
+          text: carousel.text,
+        },
+        footer: carousel.footer
+          ? {
+              text: carousel.footer,
+            }
+          : undefined,
+        carouselMessage: {
+          cards: carousel.cards,
+          messageVersion: 1,
+        },
+      }),
+    },
+  },
+});
 
 export const buttonsPayloadToLegacyButtonsMessageContent = (
   buttons: ButtonsPayload,
@@ -350,6 +406,37 @@ export const extractInteractivePayload = (
           messageVersion: interactive.nativeFlowMessage.messageVersion ?? undefined,
         }
       : undefined,
+  };
+};
+
+export const extractCarouselPayload = (
+  message: NonNullable<WAMessage["message"]>,
+): CarouselMessagePayload | null => {
+  const interactive = message.interactiveMessage;
+  const carousel = interactive?.carouselMessage;
+  if (!interactive || !carousel) {
+    return null;
+  }
+
+  return {
+    text: interactive.body?.text ?? "",
+    footer: interactive.footer?.text ?? undefined,
+    cards:
+      carousel.cards?.map((card) => ({
+        title: card.header?.title ?? undefined,
+        body: card.body?.text ?? undefined,
+        footer: card.footer?.text ?? undefined,
+        image: card.header?.imageMessage ? {} : undefined,
+        video: card.header?.videoMessage ? {} : undefined,
+        buttons:
+          card.nativeFlowMessage?.buttons?.map(
+            (button): CarouselButton => ({
+              name: button.name ?? undefined,
+              buttonParamsJson: button.buttonParamsJson ?? undefined,
+            }),
+          ) ?? [],
+      })) ?? [],
+    carouselCardType: "mixed",
   };
 };
 
@@ -478,6 +565,15 @@ export const normalizeIncomingMessage = (waMessage: WAMessage): IncomingMessage 
               })) ?? [],
           })) ?? [],
       },
+    };
+  }
+
+  const carousel = extractCarouselPayload(message);
+  if (carousel) {
+    return {
+      ...base,
+      type: "carousel",
+      carousel,
     };
   }
 

@@ -14,6 +14,8 @@ import makeWASocket, {
   fetchLatestBerryWebVersion,
   generateWAMessageFromContent,
   makeCacheableSignalKeyStore,
+  prepareWAMessageMedia,
+  proto,
   useMultiFileAuthState,
   type WAMessage,
   type WASocket,
@@ -23,6 +25,8 @@ import {
   type BerryAuthOptions,
   type BerryEventBus,
   type ButtonsPayload,
+  type CarouselCard,
+  type CarouselMessagePayload,
   type ChatRecord,
   type ContactRecord,
   type GroupRecord,
@@ -37,6 +41,8 @@ import {
   ackFromWebMessageStatus,
   buttonsPayloadToLegacyButtonsMessageContent,
   buttonsPayloadToNativeFlowInteractiveContent,
+  carouselButtonToNativeFlowButton,
+  carouselPayloadToMessageContent,
   interactivePayloadToMessageContent,
   interactiveNativeFlowAdditionalNodes,
   legacyListAdditionalNodes,
@@ -55,6 +61,7 @@ export interface SocketOptions {
 
 type MessageContent = Record<string, unknown>;
 const shouldDebugOutgoingMessages = process.env.BERRY_DEBUG_WA_MESSAGE === "1";
+const MAX_CAROUSEL_CARDS = 10;
 
 const debugJsonReplacer = (_key: string, value: unknown) => {
   if (Buffer.isBuffer(value)) {
@@ -348,6 +355,50 @@ export class BerrySocket {
     return fullMessage as WAMessage;
   }
 
+  async sendCarouselMessage(
+    to: string,
+    payload: CarouselMessagePayload,
+  ): Promise<WAMessage> {
+    if (!this.sock?.user?.id) {
+      throw new Error("Socket is not connected.");
+    }
+
+    const recipientJid = assertTransportJid(to);
+    const cards = payload.cards ?? [];
+
+    if (!cards.length) {
+      throw new Error("Carousel payload requires at least one card.");
+    }
+
+    if (cards.length > MAX_CAROUSEL_CARDS) {
+      throw new Error(`Carousel payload supports at most ${MAX_CAROUSEL_CARDS} cards.`);
+    }
+
+    this.assertCarouselCardType(payload);
+
+    const preparedCards = await Promise.all(cards.map((card, index) => this.prepareCarouselCard(card, index)));
+    const content = carouselPayloadToMessageContent({
+      text: payload.text,
+      footer: payload.footer,
+      cards: preparedCards,
+    });
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
+      userJid: this.sock.user.id,
+    });
+    this.logOutgoingMessage("carousel", fullMessage);
+
+    const additionalNodes = preparedCards.some((card) => !!card.nativeFlowMessage?.buttons?.length)
+      ? interactiveNativeFlowAdditionalNodes()
+      : undefined;
+
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
+      messageId: fullMessage.key.id!,
+      ...(additionalNodes ? { additionalNodes } : {}),
+    });
+
+    return fullMessage as WAMessage;
+  }
+
   async subscribePresence(jid: string): Promise<void> {
     if (!this.sock) {
       throw new Error("Socket is not connected.");
@@ -402,6 +453,118 @@ export class BerrySocket {
 
       return;
     }
+  }
+
+  private assertCarouselCardType(payload: CarouselMessagePayload): void {
+    if (!payload.carouselCardType || payload.carouselCardType === "mixed") {
+      return;
+    }
+
+    for (const [index, card] of payload.cards.entries()) {
+      if (payload.carouselCardType === "image" && card.video) {
+        throw new Error(`Carousel card ${index + 1} contains video but carouselCardType is "image".`);
+      }
+
+      if (payload.carouselCardType === "video" && card.image) {
+        throw new Error(`Carousel card ${index + 1} contains image but carouselCardType is "video".`);
+      }
+    }
+  }
+
+  private async prepareCarouselCard(
+    card: CarouselCard,
+    index: number,
+  ): Promise<proto.Message.IInteractiveMessage> {
+    const hasImage = !!card.image;
+    const hasVideo = !!card.video;
+
+    if (!hasImage && !hasVideo) {
+      throw new Error(`Carousel card ${index + 1} must contain image or video.`);
+    }
+
+    if (hasImage && hasVideo) {
+      throw new Error(`Carousel card ${index + 1} cannot contain both image and video.`);
+    }
+
+    const header: {
+      title?: string;
+      hasMediaAttachment: boolean;
+      imageMessage?: proto.Message.IImageMessage;
+      videoMessage?: proto.Message.IVideoMessage;
+    } = {
+      title: card.title ?? "",
+      hasMediaAttachment: true,
+    };
+
+    if (card.image) {
+      const media = await prepareWAMessageMedia(
+        this.toCarouselImageMediaMessage(card.image),
+        {
+          upload: this.sock!.waUploadToServer,
+          logger: this.logger,
+        },
+      );
+      header.imageMessage = media.imageMessage ?? undefined;
+    } else if (card.video) {
+      const media = await prepareWAMessageMedia(
+        this.toCarouselVideoMediaMessage(card.video),
+        {
+          upload: this.sock!.waUploadToServer,
+          logger: this.logger,
+        },
+      );
+      header.videoMessage = media.videoMessage ?? undefined;
+    }
+
+    return {
+      header,
+      body: card.body
+        ? {
+            text: card.body,
+          }
+        : undefined,
+      footer: card.footer
+        ? {
+            text: card.footer,
+          }
+        : undefined,
+      nativeFlowMessage:
+        card.buttons && card.buttons.length > 0
+          ? {
+              buttons: card.buttons.map((button, buttonIndex) =>
+                carouselButtonToNativeFlowButton(button, buttonIndex),
+              ),
+              messageParamsJson: "",
+              messageVersion: 1,
+            }
+          : undefined,
+    };
+  }
+
+  private toCarouselImageMediaMessage(media: NonNullable<CarouselCard["image"]>) {
+    const source = media.buffer ?? (media.url ? { url: media.url } : undefined);
+    if (!source) {
+      throw new Error("Carousel image media must provide buffer or url before reaching the socket layer.");
+    }
+
+    return {
+      image: source,
+      ...(media.mimetype ? { mimetype: media.mimetype } : {}),
+      ...(media.fileName ? { fileName: media.fileName } : {}),
+    };
+  }
+
+  private toCarouselVideoMediaMessage(media: NonNullable<CarouselCard["video"]>) {
+    const source = media.buffer ?? (media.url ? { url: media.url } : undefined);
+    if (!source) {
+      throw new Error("Carousel video media must provide buffer or url before reaching the socket layer.");
+    }
+
+    return {
+      video: source,
+      ...(media.mimetype ? { mimetype: media.mimetype } : {}),
+      ...(media.fileName ? { fileName: media.fileName } : {}),
+    };
   }
 
   private async createSocketAndWaitUntilOpen(): Promise<"open" | "restart_required"> {

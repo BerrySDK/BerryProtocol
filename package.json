@@ -1,6 +1,6 @@
 {
     "name":  "berrysdk",
-    "version":  "0.1.7",
+    "version":  "0.1.9",
     "private":  true,
     "type":  "module",
     "description":  "Berry SDK monorepo for WhatsApp Web SDK, transport, proto wrappers, and publishing packages.",

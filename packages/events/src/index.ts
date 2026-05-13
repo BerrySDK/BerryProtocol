@@ -122,6 +122,35 @@ export interface ButtonsPayload {
   buttons: ButtonRow[];
 }
 
+export type CarouselCardType = "image" | "video" | "mixed";
+
+export interface CarouselButton {
+  id?: string;
+  title?: string;
+  kind?: "reply" | "quick_reply" | "copy_code" | "cta_url";
+  code?: string;
+  url?: string;
+  nativeFlowName?: string;
+  buttonParamsJson?: string;
+  name?: string;
+}
+
+export interface CarouselCard {
+  title?: string;
+  body?: string;
+  footer?: string;
+  image?: MediaPayload;
+  video?: MediaPayload;
+  buttons?: CarouselButton[];
+}
+
+export interface CarouselMessagePayload {
+  text: string;
+  footer?: string;
+  cards: CarouselCard[];
+  carouselCardType?: CarouselCardType;
+}
+
 export interface ListRow {
   id: string;
   title: string;
@@ -168,6 +197,7 @@ export interface BaseMessage {
     | "document"
     | "buttons"
     | "list"
+    | "carousel"
     | "interactive"
     | "reaction"
     | "location"
@@ -204,6 +234,11 @@ export interface ListMessage extends BaseMessage {
   list: ListPayload;
 }
 
+export interface CarouselMessage extends BaseMessage {
+  type: "carousel";
+  carousel: CarouselMessagePayload;
+}
+
 export interface InteractiveMessage extends BaseMessage {
   type: "interactive";
   interactive: InteractivePayload;
@@ -232,6 +267,7 @@ export type OutgoingMessage =
   | DocumentMessage
   | ButtonsMessage
   | ListMessage
+  | CarouselMessage
   | InteractiveMessage
   | ReactionMessage
   | LocationMessage

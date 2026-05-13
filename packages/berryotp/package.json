@@ -1,6 +1,6 @@
 {
   "name": "berryotp",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "Facade package for BerryOTP so consumers can import it without the @berrysdk scope.",
   "author": "Lipe Devv and Berry Protocol",
   "license": "Apache-2.0",
@@ -23,9 +23,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@berrysdk/berry-otp": "0.1.7"
+    "@berrysdk/berry-otp": "0.1.9"
   },
   "peerDependencies": {
-    "berryprotocol": "^0.1.7"
+    "berryprotocol": "^0.1.9"
   }
 }

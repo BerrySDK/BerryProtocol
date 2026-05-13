@@ -1,25 +1,25 @@
 {
-    "name":  "@berrysdk/messages",
-    "version":  "0.1.1",
-    "description":  "Outgoing message factories for Berry Protocol.",
-    "author":  "Lipe Devv and Berry Protocol",
-    "license":  "Apache-2.0",
-    "type":  "module",
-    "main":  "dist/index.js",
-    "types":  "dist/index.d.ts",
-    "files":  [
-                  "dist"
-              ],
-    "exports":  {
-                    ".":  {
-                              "types":  "./dist/index.d.ts",
-                              "import":  "./dist/index.js"
-                          }
-                },
-    "publishConfig":  {
-                          "access":  "public"
-                      },
-    "dependencies":  {
-                         "@berrysdk/events":  "0.1.1"
-                     }
+    "name": "@berrysdk/messages",
+    "version": "0.1.3",
+    "description": "Outgoing message factories for Berry Protocol.",
+    "author": "Lipe Devv and Berry Protocol",
+    "license": "Apache-2.0",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "dependencies": {
+        "@berrysdk/events": "0.1.4"
+    }
 }

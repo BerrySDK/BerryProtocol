@@ -1,28 +1,28 @@
 {
-    "name":  "@berrysdk/berry-otp",
-    "version":  "0.1.7",
-    "description":  "Official OTP flows for Berry SDK on top of WhatsApp native-flow and fallback buttons.",
-    "author":  "Lipe Devv and Berry Protocol",
-    "license":  "Apache-2.0",
-    "type":  "module",
-    "main":  "dist/index.js",
-    "types":  "dist/index.d.ts",
-    "files":  [
-                  "dist",
-                  "README.md"
-              ],
-    "exports":  {
-                    ".":  {
-                              "types":  "./dist/index.d.ts",
-                              "import":  "./dist/index.js",
-                              "require":  "./dist/index.js",
-                              "default":  "./dist/index.js"
-                          }
-                },
-    "publishConfig":  {
-                          "access":  "public"
-                      },
-    "dependencies":  {
-                         "@berrysdk/core":  "0.1.7"
-                     }
+    "name": "@berrysdk/berry-otp",
+    "version": "0.1.9",
+    "description": "Official OTP flows for Berry SDK on top of WhatsApp native-flow and fallback buttons.",
+    "author": "Lipe Devv and Berry Protocol",
+    "license": "Apache-2.0",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "dependencies": {
+        "@berrysdk/core": "0.1.9"
+    }
 }

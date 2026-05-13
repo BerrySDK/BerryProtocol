@@ -7,7 +7,7 @@
     "start": "node test-from-npm.mjs"
   },
   "dependencies": {
-    "berryprotocol": "^0.1.7",
-    "berryotp": "^0.1.7"
+    "berryprotocol": "^0.1.9",
+    "berryotp": "^0.1.9"
   }
 }

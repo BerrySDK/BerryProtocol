@@ -1,26 +1,26 @@
 {
-    "name":  "@berrysdk/proto",
-    "version":  "0.1.1",
-    "description":  "Berry Protocol proto wrapper around WhatsApp Web protobuf definitions.",
-    "author":  "Lipe Devv and Berry Protocol",
-    "license":  "Apache-2.0",
-    "type":  "module",
-    "main":  "dist/index.js",
-    "types":  "dist/index.d.ts",
-    "files":  [
-                  "dist"
-              ],
-    "exports":  {
-                    ".":  {
-                              "types":  "./dist/index.d.ts",
-                              "import":  "./dist/index.js"
-                          }
-                },
-    "publishConfig":  {
-                          "access":  "public"
-                      },
-    "dependencies":  {
-                         "@wppconnect/wa-proto":  "^2.3000.1030818676",
-                         "protobufjs":  "^7.4.0"
-                     }
+    "name": "@berrysdk/proto",
+    "version": "0.1.2",
+    "description": "Berry Protocol proto wrapper around WhatsApp Web protobuf definitions.",
+    "author": "Lipe Devv and Berry Protocol",
+    "license": "Apache-2.0",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "dependencies": {
+        "@wppconnect/wa-proto": "^2.3000.1030818676",
+        "protobufjs": "^7.4.0"
+    }
 }

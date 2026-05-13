@@ -15,6 +15,9 @@ import {
   BerryEventBus,
   type BerryEventMap,
   type ButtonsPayload,
+  type CarouselCard,
+  type CarouselCardType,
+  type CarouselMessagePayload,
   type ContactPayload,
   type IncomingMessage,
   type InteractivePayload,
@@ -28,6 +31,7 @@ import {
 import { MediaManager } from "@berrysdk/media";
 import {
   createContactMessage,
+  createCarouselMessage,
   createLocationMessage,
   createReactionMessage,
   createTextMessage,
@@ -48,6 +52,7 @@ export interface BerryClientOptions {
 }
 
 type BerryMediaSource = Buffer | { url: string | URL };
+const MAX_CAROUSEL_CARDS = 10;
 
 const assertWhatsAppJid = (jid: string): string => {
   const normalized = jid.trim();
@@ -63,6 +68,8 @@ const assertWhatsAppJid = (jid: string): string => {
 export interface BerrySendMessageContent {
   ai?: boolean;
   text?: string;
+  cards?: CarouselCard[];
+  carouselCardType?: CarouselCardType;
   image?: BerryMediaSource;
   audio?: BerryMediaSource;
   document?: BerryMediaSource;
@@ -248,6 +255,13 @@ export class BerryClient {
     return this.sendMessage(to, { list });
   }
 
+  async sendCarousel(
+    to: string,
+    payload: CarouselMessagePayload,
+  ): Promise<OutgoingMessage> {
+    return this.sendMessage(to, payload as BerrySendMessageContent);
+  }
+
   async sendLegacyButtons(to: string, payload: ButtonsPayload): Promise<OutgoingMessage> {
     return this.queue.enqueue(async () => {
       const message: OutgoingMessage = {
@@ -365,6 +379,14 @@ export class BerryClient {
     message: OutgoingMessage;
     dispatch: (recipientJid: string) => Promise<{ key: { id?: string | null } }>;
   }> {
+    if (content.cards?.length) {
+      const carousel = await this.normalizeCarouselPayload(content);
+      return {
+        message: createCarouselMessage(to, carousel),
+        dispatch: (recipientJid) => this.socket.sendCarouselMessage(recipientJid, carousel),
+      };
+    }
+
     if (typeof content.text === "string") {
       const text = content.text;
       const message = createTextMessage(to, text);
@@ -549,7 +571,7 @@ export class BerryClient {
     }
 
     throw new Error(
-      "Unsupported message content. Use text, image, audio, document, buttonsMessage, list/listMessage, interactiveMessage, react, location or contacts.",
+      "Unsupported message content. Use text, image, audio, document, buttonsMessage, list/listMessage, cards, interactiveMessage, react, location or contacts.",
     );
   }
 
@@ -578,6 +600,95 @@ export class BerryClient {
     }
 
     throw new Error("Only Buffer or { url } media inputs are supported for BerryProtocol-compatible sends.");
+  }
+
+  private async normalizeCarouselPayload(
+    content: Pick<BerrySendMessageContent, "text" | "footer" | "cards" | "carouselCardType">,
+  ): Promise<CarouselMessagePayload> {
+    const cards = content.cards ?? [];
+    if (!cards.length) {
+      throw new Error("Carousel payload requires at least one card.");
+    }
+
+    if (cards.length > MAX_CAROUSEL_CARDS) {
+      throw new Error(`Carousel payload supports at most ${MAX_CAROUSEL_CARDS} cards.`);
+    }
+
+    this.assertCarouselCardType(content.carouselCardType, cards);
+    this.assertCarouselCardMedia(cards);
+
+    return {
+      text: content.text ?? "",
+      footer: content.footer,
+      carouselCardType: content.carouselCardType,
+      cards: await Promise.all(cards.map((card) => this.normalizeCarouselCard(card))),
+    };
+  }
+
+  private assertCarouselCardMedia(cards: CarouselCard[]): void {
+    for (const [index, card] of cards.entries()) {
+      const hasImage = !!card.image;
+      const hasVideo = !!card.video;
+
+      if (!hasImage && !hasVideo) {
+        throw new Error(`Carousel card ${index + 1} must contain image or video.`);
+      }
+
+      if (hasImage && hasVideo) {
+        throw new Error(`Carousel card ${index + 1} cannot contain both image and video.`);
+      }
+    }
+  }
+
+  private assertCarouselCardType(
+    carouselCardType: CarouselCardType | undefined,
+    cards: CarouselCard[],
+  ): void {
+    if (!carouselCardType || carouselCardType === "mixed") {
+      return;
+    }
+
+    for (const [index, card] of cards.entries()) {
+      if (carouselCardType === "image" && card.video) {
+        throw new Error(`Carousel card ${index + 1} contains video but carouselCardType is "image".`);
+      }
+
+      if (carouselCardType === "video" && card.image) {
+        throw new Error(`Carousel card ${index + 1} contains image but carouselCardType is "video".`);
+      }
+    }
+  }
+
+  private async normalizeCarouselCard(card: CarouselCard): Promise<CarouselCard> {
+    return {
+      ...card,
+      image: await this.normalizeCarouselMedia(card.image),
+      video: await this.normalizeCarouselMedia(card.video),
+    };
+  }
+
+  private async normalizeCarouselMedia(
+    media?: CarouselCard["image"] | CarouselCard["video"],
+  ): Promise<CarouselCard["image"] | undefined> {
+    if (!media) {
+      return undefined;
+    }
+
+    if (media.buffer || media.url) {
+      return media;
+    }
+
+    if (media.path) {
+      const loaded = await this.media.load(media);
+      return {
+        ...media,
+        buffer: loaded.buffer,
+        mimetype: media.mimetype ?? loaded.metadata.mimetype,
+        fileName: media.fileName ?? loaded.metadata.fileName,
+      };
+    }
+
+    throw new Error("Carousel media must provide url, path or buffer.");
   }
 
   private bindInternals(): void {

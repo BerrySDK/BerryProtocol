@@ -1,6 +1,6 @@
 {
   "name": "@berrysdk/transport",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Internal BerrySDK WhatsApp Web engine and transport runtime.",
   "author": "BerrySDK",
   "license": "Apache-2.0",

@@ -8,6 +8,8 @@
 import {
   AudioMessage,
   ButtonsPayload,
+  CarouselMessage,
+  CarouselMessagePayload,
   ContactPayload,
   ContactMessage,
   DocumentMessage,
@@ -59,6 +61,14 @@ export const createButtonsMessage = (to: string, buttons: ButtonsPayload): Outgo
 export const createListMessage = (to: string, list: ListPayload): ListMessage => ({
   ...buildBase("list", to),
   list,
+});
+
+export const createCarouselMessage = (
+  to: string,
+  carousel: CarouselMessagePayload,
+): CarouselMessage => ({
+  ...buildBase("carousel", to),
+  carousel,
 });
 
 export const createReactionMessage = (
