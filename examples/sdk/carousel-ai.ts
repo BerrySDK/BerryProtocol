@@ -11,7 +11,7 @@ if (!to) {
 }
 
 const client = new BerryProtocol({
-  sessionId: "carousel-example",
+  sessionId: "carousel-ai-example",
 });
 
 client.once("connection.open", async () => {
@@ -42,6 +42,9 @@ client.once("connection.open", async () => {
     console.log("CAROUSEL AI:", sent.id);
   } catch (error) {
     console.error("Falha ao enviar carousel com AI label:", error);
+  } finally {
+    await client.disconnect().catch(() => undefined);
+    process.exit(0);
   }
 });
 

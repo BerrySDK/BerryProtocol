@@ -130,7 +130,7 @@ const runLiveMatrix = async () => {
   console.log("Running live compatibility matrix...");
 
   const client = new BerryProtocol({
-    sessionId: "carousel-example",
+    sessionId: "compat-matrix-live",
   });
 
   const ackLog = new Map<string, string[]>();
