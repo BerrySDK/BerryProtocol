@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  berry-gateway:
+    build:
+      context: .
+    environment:
+      BERRY_HTTP_HOST: 0.0.0.0
+      BERRY_HTTP_PORT: 3000
+      BERRY_SQLITE_PATH: /data/berryprotocol.db
+      BERRY_AUTH_FOLDER: /data/auth
+    ports:
+      - "3000:3000"
+    volumes:
+      - berry_data:/data
+
+volumes:
+  berry_data:

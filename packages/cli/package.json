@@ -1,0 +1,27 @@
+{
+  "name": "@berrysdk/cli",
+  "version": "0.1.0",
+  "description": "CLI tooling for Berry Protocol sessions and message testing.",
+  "author": "Lipe Devv and Berry Protocol",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@berrysdk/core": "0.1.0",
+    "commander": "^14.0.0",
+    "pino": "^9.6.0"
+  }
+}

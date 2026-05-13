@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+*.log
+coverage
+packages/*/dist
+packages/*/.tsbuildinfo
+.baileys-sessions
+.berry-sessions
+.vscode
+berryprotocol.db
+berrysdk.db
+_reference_baileys2
+_vendor_whatsapp_proto
+_vendor_wppconnect_wa_proto
