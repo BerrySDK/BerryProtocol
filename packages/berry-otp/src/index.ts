@@ -7,13 +7,13 @@
  */
 import crypto, { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { renderOTPTemplate } from "./templates.js";
 import { MemoryOTPStore } from "./store.js";
+import { renderOTPTemplate } from "./templates.js";
 import type {
   BerryOTPEventMap,
   BerryOTPOptions,
-  BerryOTPPublicRecord,
   BerryOTPRecord,
+  BerryOTPPublicRecord,
   BerryOTPSendOptions,
   BerryOTPSendResult,
   BerryOTPStatus,
@@ -31,7 +31,13 @@ export interface BerryOTPClient {
     payload: {
       text: string;
       footer?: string;
-      buttons: Array<{ id: string; title: string; kind?: "reply" | "quick_reply" | "copy_code" | "cta_url"; code?: string; url?: string }>;
+      buttons: Array<{
+        id: string;
+        title: string;
+        kind?: "reply" | "quick_reply" | "copy_code" | "cta_url";
+        code?: string;
+        url?: string;
+      }>;
     },
   ): Promise<{ id: string }>;
   sendText(to: string, text: string): Promise<{ id: string }>;
@@ -55,7 +61,7 @@ const DEFAULTS: Required<Omit<BerryOTPOptions, "store">> = {
   issuer: "BerryOTP",
   codeLength: 6,
   ttlMs: 5 * 60 * 1000,
-  footer: "Este código dura {minutes} minutos.",
+  footer: "Este codigo dura {minutes} minutos.",
   editOnExpire: true,
   mode: "copy-code",
   maxAttempts: 5,
@@ -64,13 +70,13 @@ const DEFAULTS: Required<Omit<BerryOTPOptions, "store">> = {
 };
 
 const EXPIRED_TEXT = [
-  "🔒 Código expirado",
+  "Codigo expirado",
   "",
-  "Este código não é mais válido.",
-  "Solicite um novo código para continuar.",
+  "Este codigo nao e mais valido.",
+  "Solicite um novo codigo para continuar.",
 ].join("\n");
 
-const DENIED_REPLY_TEXT = "Entendido. Esse código foi cancelado e não poderá ser usado.";
+const DENIED_REPLY_TEXT = "Entendido. Esse codigo foi cancelado e nao podera ser usado.";
 
 export class BerryOTP extends EventEmitter {
   private readonly options: Required<Omit<BerryOTPOptions, "store">> & { store: BerryOTPStore };
@@ -115,42 +121,54 @@ export class BerryOTP extends EventEmitter {
   }
 
   static createLoginFlow(client: BerryOTPClient, options: BerryOTPOptions = {}): BerryOTP {
-    return new BerryOTP(client, {
-      ...options,
-      issuer: options.issuer ?? "Berry Login",
-      ttlMs: options.ttlMs ?? 5 * 60 * 1000,
-    }, {
-      template: "login",
-      purpose: "entrar na conta",
-      issuer: options.issuer ?? "Berry Login",
-      ttlMs: options.ttlMs ?? 5 * 60 * 1000,
-    });
+    return new BerryOTP(
+      client,
+      {
+        ...options,
+        issuer: options.issuer ?? "Berry Login",
+        ttlMs: options.ttlMs ?? 5 * 60 * 1000,
+      },
+      {
+        template: "login",
+        purpose: "entrar na conta",
+        issuer: options.issuer ?? "Berry Login",
+        ttlMs: options.ttlMs ?? 5 * 60 * 1000,
+      },
+    );
   }
 
   static createPasswordResetFlow(client: BerryOTPClient, options: BerryOTPOptions = {}): BerryOTP {
-    return new BerryOTP(client, {
-      ...options,
-      issuer: options.issuer ?? "Berry Password Reset",
-      ttlMs: options.ttlMs ?? 10 * 60 * 1000,
-    }, {
-      template: "password_reset",
-      purpose: "redefinir sua senha",
-      issuer: options.issuer ?? "Berry Password Reset",
-      ttlMs: options.ttlMs ?? 10 * 60 * 1000,
-    });
+    return new BerryOTP(
+      client,
+      {
+        ...options,
+        issuer: options.issuer ?? "Berry Password Reset",
+        ttlMs: options.ttlMs ?? 10 * 60 * 1000,
+      },
+      {
+        template: "password_reset",
+        purpose: "redefinir sua senha",
+        issuer: options.issuer ?? "Berry Password Reset",
+        ttlMs: options.ttlMs ?? 10 * 60 * 1000,
+      },
+    );
   }
 
   static create2FAFlow(client: BerryOTPClient, options: BerryOTPOptions = {}): BerryOTP {
-    return new BerryOTP(client, {
-      ...options,
-      issuer: options.issuer ?? "Berry 2FA",
-      ttlMs: options.ttlMs ?? 3 * 60 * 1000,
-    }, {
-      template: "2fa",
-      purpose: "confirmar sua autenticação em duas etapas",
-      issuer: options.issuer ?? "Berry 2FA",
-      ttlMs: options.ttlMs ?? 3 * 60 * 1000,
-    });
+    return new BerryOTP(
+      client,
+      {
+        ...options,
+        issuer: options.issuer ?? "Berry 2FA",
+        ttlMs: options.ttlMs ?? 3 * 60 * 1000,
+      },
+      {
+        template: "2fa",
+        purpose: "confirmar sua autenticacao em duas etapas",
+        issuer: options.issuer ?? "Berry 2FA",
+        ttlMs: options.ttlMs ?? 3 * 60 * 1000,
+      },
+    );
   }
 
   on<EventName extends keyof BerryOTPEventMap>(
@@ -197,7 +215,7 @@ export class BerryOTP extends EventEmitter {
             buttons: [
               {
                 id: `berryotp:not_requested:${id}`,
-                title: "Não pedi nenhum código",
+                title: "Nao pedi nenhum codigo",
               },
             ],
           })
@@ -208,13 +226,13 @@ export class BerryOTP extends EventEmitter {
               buttons: [
                 {
                   id: `berryotp:copy:${id}`,
-                  title: "Copiar código",
+                  title: "Copiar codigo",
                   kind: "copy_code",
                   code,
                 },
                 {
                   id: `berryotp:not_requested:${id}`,
-                  title: "Não pedi nenhum código",
+                  title: "Nao pedi nenhum codigo",
                   kind: "quick_reply",
                 },
               ],
@@ -422,7 +440,7 @@ export class BerryOTP extends EventEmitter {
     return this.send(to, {
       ...options,
       template: "2fa",
-      purpose: "confirmar sua autenticação em duas etapas",
+      purpose: "confirmar sua autenticacao em duas etapas",
       metadata: {
         userId: options.userId,
         ...options.metadata,

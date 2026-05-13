@@ -17,9 +17,9 @@ export const renderOTPTemplate = ({
     case "login":
       return {
         text: [
-          "🔐 Código de login",
+          "Codigo de login",
           "",
-          "Use o código abaixo para entrar na sua conta:",
+          "Use o codigo abaixo para entrar na sua conta:",
           "",
           `*${code}*`,
           "",
@@ -29,9 +29,9 @@ export const renderOTPTemplate = ({
     case "password_reset":
       return {
         text: [
-          "🔑 Redefinição de senha",
+          "Redefinicao de senha",
           "",
-          "Use o código abaixo para redefinir sua senha:",
+          "Use o codigo abaixo para redefinir sua senha:",
           "",
           `*${code}*`,
           "",
@@ -41,9 +41,9 @@ export const renderOTPTemplate = ({
     case "2fa":
       return {
         text: [
-          "🛡️ Verificação em duas etapas",
+          "Verificacao em duas etapas",
           "",
-          "Use o código abaixo para continuar:",
+          "Use o codigo abaixo para continuar:",
           "",
           `*${code}*`,
           "",
@@ -54,9 +54,9 @@ export const renderOTPTemplate = ({
     default:
       return {
         text: [
-          "🔐 Código de verificação",
+          "Codigo de verificacao",
           "",
-          `Use o código abaixo para ${purpose ?? "continuar"}:`,
+          `Use o codigo abaixo para ${purpose ?? "continuar"}:`,
           "",
           `*${code}*`,
           "",
