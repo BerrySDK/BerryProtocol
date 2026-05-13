@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 *.log
+*.tgz
 coverage
 packages/*/dist
 packages/*/.tsbuildinfo
