@@ -153,6 +153,8 @@ export interface MediaPayload {
 export interface BaseMessage {
   id: string;
   to: string;
+  chatId?: string;
+  remoteJid?: string;
   from?: string;
   timestamp: string;
   ack: AckStatus;

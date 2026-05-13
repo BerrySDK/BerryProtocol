@@ -396,10 +396,13 @@ export const normalizeIncomingMessage = (waMessage: WAMessage): IncomingMessage 
   }
 
   const selection = extractButtonSelection(message);
+  const remoteJid = key.remoteJid ?? "";
   const base = {
     id: key.id ?? randomUUID(),
-    to: key.remoteJid ?? "",
-    from: key.participant ?? key.remoteJid ?? "",
+    to: remoteJid,
+    chatId: remoteJid,
+    remoteJid,
+    from: key.participant ?? remoteJid,
     timestamp: new Date(Number(waMessage.messageTimestamp ?? Date.now()) * 1000).toISOString(),
     ack: ackFromWebMessageStatus(waMessage.status),
     ...selection,

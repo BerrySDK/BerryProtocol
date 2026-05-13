@@ -1,6 +1,6 @@
 {
     "name":  "@berrysdk/socket",
-    "version":  "0.1.6",
+    "version":  "0.1.7",
     "description":  "Internal transport adapter for Berry Protocol.",
     "author":  "Lipe Devv and Berry Protocol",
     "license":  "Apache-2.0",
@@ -20,10 +20,10 @@
                           "access":  "public"
                       },
     "dependencies":  {
-                         "@berrysdk/events":  "0.1.1",
+                         "@berrysdk/events":  "0.1.2",
                          "@berrysdk/proto":  "0.1.1",
-                         "@berrysdk/transport":  "0.1.6",
-                         "@berrysdk/wa-message":  "0.1.6",
+                         "@berrysdk/transport":  "0.1.7",
+                         "@berrysdk/wa-message":  "0.1.7",
                          "pino":  "^9.6.0",
                          "ws":  "^8.18.1"
                      }

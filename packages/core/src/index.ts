@@ -49,6 +49,17 @@ export interface BerryClientOptions {
 
 type BerryMediaSource = Buffer | { url: string | URL };
 
+const assertWhatsAppJid = (jid: string): string => {
+  const normalized = jid.trim();
+  if (!normalized || !normalized.includes("@")) {
+    throw new Error(
+      `Invalid WhatsApp JID "${jid}". Use a private, group, newsletter or status JID like "5511999999999@s.whatsapp.net".`,
+    );
+  }
+
+  return normalized;
+};
+
 export interface BerrySendMessageContent {
   ai?: boolean;
   text?: string;
@@ -334,8 +345,9 @@ export class BerryClient {
     content: BerrySendMessageContent,
   ): Promise<OutgoingMessage> {
     return this.queue.enqueue(async () => {
+      const recipientJid = assertWhatsAppJid(to);
       const normalized = await this.normalizeOutgoingMessage(to, content);
-      const result = await normalized.dispatch();
+      const result = await normalized.dispatch(recipientJid);
       const sent = {
         ...normalized.message,
         id: result.key.id ?? normalized.message.id,
@@ -351,15 +363,15 @@ export class BerryClient {
     content: BerrySendMessageContent,
   ): Promise<{
     message: OutgoingMessage;
-    dispatch: () => Promise<{ key: { id?: string | null } }>;
+    dispatch: (recipientJid: string) => Promise<{ key: { id?: string | null } }>;
   }> {
     if (typeof content.text === "string") {
       const text = content.text;
       const message = createTextMessage(to, text);
       return {
         message,
-        dispatch: () =>
-          this.socket.sendTransportMessage(to, { text, ...(content.ai ? { ai: true } : {}) }),
+        dispatch: (recipientJid) =>
+          this.socket.sendTransportMessage(recipientJid, { text, ...(content.ai ? { ai: true } : {}) }),
       };
     }
 
@@ -378,8 +390,8 @@ export class BerryClient {
           type: "image",
           media,
         },
-        dispatch: () =>
-          this.socket.sendTransportMessage(to, {
+        dispatch: (recipientJid) =>
+          this.socket.sendTransportMessage(recipientJid, {
             ...content,
             image: media.buffer!,
             caption: media.caption,
@@ -404,8 +416,8 @@ export class BerryClient {
           type: "audio",
           media,
         },
-        dispatch: () =>
-          this.socket.sendTransportMessage(to, {
+        dispatch: (recipientJid) =>
+          this.socket.sendTransportMessage(recipientJid, {
             ...content,
             audio: media.buffer!,
             mimetype: media.mimetype,
@@ -428,8 +440,8 @@ export class BerryClient {
           type: "document",
           media,
         },
-        dispatch: () =>
-          this.socket.sendTransportMessage(to, {
+        dispatch: (recipientJid) =>
+          this.socket.sendTransportMessage(recipientJid, {
             ...content,
             document: media.buffer!,
             caption: media.caption,
@@ -451,7 +463,7 @@ export class BerryClient {
 
       return {
         message,
-        dispatch: () => this.socket.sendReplyButtonsMessage(to, content.buttonsMessage!),
+        dispatch: (recipientJid) => this.socket.sendReplyButtonsMessage(recipientJid, content.buttonsMessage!),
       };
     }
 
@@ -468,7 +480,7 @@ export class BerryClient {
 
       return {
         message,
-        dispatch: () => this.socket.sendListMessage(to, list),
+        dispatch: (recipientJid) => this.socket.sendListMessage(recipientJid, list),
       };
     }
 
@@ -484,7 +496,7 @@ export class BerryClient {
 
       return {
         message,
-        dispatch: () => this.socket.sendInteractiveMessage(to, content.interactiveMessage!),
+        dispatch: (recipientJid) => this.socket.sendInteractiveMessage(recipientJid, content.interactiveMessage!),
       };
     }
 
@@ -496,8 +508,8 @@ export class BerryClient {
       );
       return {
         message,
-        dispatch: () =>
-          this.socket.sendTransportMessage(to, {
+        dispatch: (recipientJid) =>
+          this.socket.sendTransportMessage(recipientJid, {
             react: content.react!,
             ...(content.ai ? { ai: true } : {}),
           }),
@@ -513,8 +525,8 @@ export class BerryClient {
       };
       return {
         message: createLocationMessage(to, location),
-        dispatch: () =>
-          this.socket.sendTransportMessage(to, {
+        dispatch: (recipientJid) =>
+          this.socket.sendTransportMessage(recipientJid, {
             location: content.location!,
             ...(content.ai ? { ai: true } : {}),
           }),
@@ -528,8 +540,8 @@ export class BerryClient {
       };
       return {
         message: createContactMessage(to, contact),
-        dispatch: () =>
-          this.socket.sendTransportMessage(to, {
+        dispatch: (recipientJid) =>
+          this.socket.sendTransportMessage(recipientJid, {
             contacts: content.contacts!,
             ...(content.ai ? { ai: true } : {}),
           }),

@@ -1,6 +1,6 @@
 {
     "name":  "@berrysdk/wa-message",
-    "version":  "0.1.6",
+    "version":  "0.1.7",
     "description":  "Rendering-aware WhatsApp message builders for Berry Protocol.",
     "author":  "Lipe Devv and Berry Protocol",
     "license":  "Apache-2.0",
@@ -20,8 +20,8 @@
                           "access":  "public"
                       },
     "dependencies":  {
-                         "@berrysdk/events":  "0.1.1",
+                         "@berrysdk/events":  "0.1.2",
                          "@berrysdk/proto":  "0.1.1",
-                         "@berrysdk/transport":  "0.1.6"
+                         "@berrysdk/transport":  "0.1.7"
                      }
 }

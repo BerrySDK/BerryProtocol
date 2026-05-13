@@ -164,7 +164,7 @@ export class SQLiteStore {
         statement.run({
           id: message.id,
           session_id: sessionId,
-          remote_jid: message.from,
+          remote_jid: message.chatId ?? message.remoteJid ?? message.to ?? message.from ?? "",
           payload: JSON.stringify(message),
         });
       }

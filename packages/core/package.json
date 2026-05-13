@@ -1,6 +1,6 @@
 {
     "name":  "@berrysdk/core",
-    "version":  "0.1.6",
+    "version":  "0.1.7",
     "description":  "Public SDK for Berry Protocol WhatsApp integrations.",
     "author":  "Lipe Devv and Berry Protocol",
     "license":  "Apache-2.0",
@@ -23,11 +23,11 @@
                       },
     "dependencies":  {
                          "@berrysdk/auth":  "0.1.1",
-                         "@berrysdk/events":  "0.1.1",
+                         "@berrysdk/events":  "0.1.2",
                          "@berrysdk/media":  "0.1.1",
                          "@berrysdk/messages":  "0.1.1",
-                         "@berrysdk/socket":  "0.1.6",
-                         "@berrysdk/store":  "0.1.1",
+                         "@berrysdk/socket":  "0.1.7",
+                         "@berrysdk/store":  "0.1.2",
                          "pino":  "^9.6.0",
                          "qrcode-terminal":  "^0.12.0"
                      }

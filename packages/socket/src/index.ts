@@ -70,6 +70,17 @@ const debugJsonReplacer = (_key: string, value: unknown) => {
 
 const normalizePhoneNumber = (value: string): string => value.replace(/\D/g, "");
 
+const assertTransportJid = (jid: string): string => {
+  const normalized = jid.trim();
+  if (!normalized || !normalized.includes("@")) {
+    throw new Error(
+      `Invalid WhatsApp JID "${jid}". BerryProtocol expected something like "5511999999999@s.whatsapp.net".`,
+    );
+  }
+
+  return normalized;
+};
+
 const generateNumericPairingCode = (): string =>
   Math.floor(10_000_000 + Math.random() * 90_000_000).toString();
 
@@ -243,14 +254,15 @@ export class BerrySocket {
   }
 
   async sendTransportMessage(to: string, content: AnyMessageContent): Promise<WAMessage> {
-    return this.sendMessage(to, content as MessageContent);
+    return this.sendMessage(assertTransportJid(to), content as MessageContent);
   }
 
   async editMessage(to: string, messageId: string, text: string): Promise<WAMessage> {
-    return this.sendTransportMessage(to, {
+    const recipientJid = assertTransportJid(to);
+    return this.sendTransportMessage(recipientJid, {
       text,
       edit: {
-        remoteJid: to,
+        remoteJid: recipientJid,
         fromMe: true,
         id: messageId,
       },
@@ -262,13 +274,14 @@ export class BerrySocket {
       throw new Error("Socket is not connected.");
     }
 
+    const recipientJid = assertTransportJid(to);
     const content = buttonsPayloadToLegacyButtonsMessageContent(buttons);
-    const fullMessage = generateWAMessageFromContent(to, content, {
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
       userJid: this.sock.user.id,
     });
     this.logOutgoingMessage("buttons-legacy", fullMessage);
 
-    await this.sock.relayMessage(to, fullMessage.message!, {
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
       messageId: fullMessage.key.id!,
     });
 
@@ -280,13 +293,14 @@ export class BerrySocket {
       throw new Error("Socket is not connected.");
     }
 
+    const recipientJid = assertTransportJid(to);
     const content = interactivePayloadToMessageContent(interactive);
-    const fullMessage = generateWAMessageFromContent(to, content, {
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
       userJid: this.sock.user.id,
     });
     this.logOutgoingMessage("interactive", fullMessage);
 
-    await this.sock.relayMessage(to, fullMessage.message!, {
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
       messageId: fullMessage.key.id!,
       additionalNodes: interactiveNativeFlowAdditionalNodes(),
     });
@@ -299,13 +313,14 @@ export class BerrySocket {
       throw new Error("Socket is not connected.");
     }
 
+    const recipientJid = assertTransportJid(to);
     const content = buttonsPayloadToNativeFlowInteractiveContent(buttons);
-    const fullMessage = generateWAMessageFromContent(to, content, {
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
       userJid: this.sock.user.id,
     });
     this.logOutgoingMessage("buttons", fullMessage);
 
-    await this.sock.relayMessage(to, fullMessage.message!, {
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
       messageId: fullMessage.key.id!,
       additionalNodes: interactiveNativeFlowAdditionalNodes(),
     });
@@ -318,13 +333,14 @@ export class BerrySocket {
       throw new Error("Socket is not connected.");
     }
 
+    const recipientJid = assertTransportJid(to);
     const content = listToLegacyListMessageContent(list);
-    const fullMessage = generateWAMessageFromContent(to, content, {
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
       userJid: this.sock.user.id,
     });
     this.logOutgoingMessage("list", fullMessage);
 
-    await this.sock.relayMessage(to, fullMessage.message!, {
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
       messageId: fullMessage.key.id!,
       additionalNodes: legacyListAdditionalNodes(),
     });

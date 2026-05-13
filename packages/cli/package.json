@@ -1,6 +1,6 @@
 {
     "name":  "@berrysdk/cli",
-    "version":  "0.1.6",
+    "version":  "0.1.7",
     "description":  "CLI tooling for Berry Protocol sessions and message testing.",
     "author":  "Lipe Devv and Berry Protocol",
     "license":  "Apache-2.0",
@@ -20,7 +20,7 @@
                           "access":  "public"
                       },
     "dependencies":  {
-                         "@berrysdk/core":  "0.1.6",
+                         "@berrysdk/core":  "0.1.7",
                          "commander":  "^14.0.0",
                          "pino":  "^9.6.0"
                      }

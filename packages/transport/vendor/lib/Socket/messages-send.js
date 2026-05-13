@@ -11,6 +11,13 @@ import { areJidsSameUser, getBinaryNodeChild, getBinaryNodeChildren, isHostedLid
 import { USyncQuery, USyncUser } from '../WAUSync/index.js';
 import { makeNewsletterSocket } from './newsletter.js';
 const BIZ_BOT_SUPPORT_PAYLOAD = '{}';
+const decodeRequiredJid = (jid, context) => {
+    const decoded = jidDecode(jid);
+    if (!decoded) {
+        throw new Boom(`Invalid JID passed to ${context}: ${jid}`, { statusCode: 400 });
+    }
+    return decoded;
+};
 export const makeMessagesSocket = (config) => {
     const { logger, linkPreviewImageThumbnailWidth, generateHighQualityLinkPreview, options: httpRequestOptions, patchMessageBeforeSending, cachedGroupMetadata, enableRecentMessageCache, maxMsgRetryCount } = config;
     const sock = makeNewsletterSocket(config);
@@ -384,8 +391,8 @@ export const makeMessagesSocket = (config) => {
                     return null;
                 let msgToEncrypt = patchedMessage;
                 if (dsmMessage) {
-                    const { user: targetUser } = jidDecode(jid);
-                    const { user: ownPnUser } = jidDecode(meId);
+                    const { user: targetUser } = decodeRequiredJid(jid, 'createParticipantNodes recipient');
+                    const { user: ownPnUser } = decodeRequiredJid(meId, 'createParticipantNodes self');
                     const ownLidUser = meLidUser;
                     const isOwnUser = targetUser === ownPnUser || (ownLidUser && targetUser === ownLidUser);
                     const isExactSenderDevice = jid === meId || (meLid && jid === meLid);
@@ -432,7 +439,7 @@ export const makeMessagesSocket = (config) => {
         const isRetryResend = Boolean(participant?.jid);
         let shouldIncludeDeviceIdentity = isRetryResend;
         const statusJid = 'status@broadcast';
-        const { user, server } = jidDecode(jid);
+        const { user, server } = decodeRequiredJid(jid, 'relayMessage');
         const isGroup = server === 'g.us';
         const isStatus = jid === statusJid;
         const isLid = server === 'lid';
@@ -459,7 +466,7 @@ export const makeMessagesSocket = (config) => {
             if (!isGroup && !isStatus) {
                 additionalAttributes = { ...additionalAttributes, device_fanout: 'false' };
             }
-            const { user, device } = jidDecode(participant.jid);
+            const { user, device } = decodeRequiredJid(participant.jid, 'relayMessage participant');
             devices.push({
                 user,
                 device,
@@ -595,7 +602,7 @@ export const makeMessagesSocket = (config) => {
                 else {
                     logger.debug({ to: jid, ownId }, 'Using PN identity for @s.whatsapp.net conversation');
                 }
-                const { user: ownUser } = jidDecode(ownId);
+                const { user: ownUser } = decodeRequiredJid(ownId, 'relayMessage own identity');
                 if (!participant) {
                     const patchedForReporting = await patchMessageBeforeSending(message, [jid]);
                     reportingMessage = Array.isArray(patchedForReporting)
@@ -611,7 +618,9 @@ export const makeMessagesSocket = (config) => {
                     });
                     if (user !== ownUser) {
                         const ownUserServer = isLid ? 'lid' : 's.whatsapp.net';
-                        const ownUserForAddressing = isLid && meLid ? jidDecode(meLid).user : jidDecode(meId).user;
+                        const ownUserForAddressing = isLid && meLid
+                            ? decodeRequiredJid(meLid, 'relayMessage own lid addressing').user
+                            : decodeRequiredJid(meId, 'relayMessage own pn addressing').user;
                         devices.push({
                             user: ownUserForAddressing,
                             device: 0,
@@ -637,8 +646,8 @@ export const makeMessagesSocket = (config) => {
                 const allRecipients = [];
                 const meRecipients = [];
                 const otherRecipients = [];
-                const { user: mePnUser } = jidDecode(meId);
-                const { user: meLidUser } = meLid ? jidDecode(meLid) : { user: null };
+                const { user: mePnUser } = decodeRequiredJid(meId, 'relayMessage self identity');
+                const { user: meLidUser } = meLid ? decodeRequiredJid(meLid, 'relayMessage self lid identity') : { user: null };
                 for (const { user, jid } of devices) {
                     const isExactSenderDevice = jid === meId || (meLid && jid === meLid);
                     if (isExactSenderDevice) {
