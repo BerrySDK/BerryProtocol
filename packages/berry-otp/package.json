@@ -1,6 +1,6 @@
 {
     "name":  "@berrysdk/berry-otp",
-    "version":  "0.1.3",
+    "version":  "0.1.4",
     "description":  "Official OTP flows for Berry SDK on top of WhatsApp native-flow and fallback buttons.",
     "author":  "Lipe Devv and Berry Protocol",
     "license":  "Apache-2.0",
@@ -14,7 +14,9 @@
     "exports":  {
                     ".":  {
                               "types":  "./dist/index.d.ts",
-                              "import":  "./dist/index.js"
+                              "import":  "./dist/index.js",
+                              "require":  "./dist/index.js",
+                              "default":  "./dist/index.js"
                           }
                 },
     "publishConfig":  {
