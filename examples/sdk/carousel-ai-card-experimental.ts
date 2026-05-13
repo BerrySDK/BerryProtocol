@@ -84,7 +84,11 @@ const buildCard = async (
 };
 
 const sendExperimentalCarousel = async (
-  variant: "per-card-only" | "top-level-plus-card",
+  variant:
+    | "per-card-only"
+    | "top-level-plus-card"
+    | "interactive-context-only"
+    | "full-stack",
 ) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const berrySocket = (client as any).socket;
@@ -106,11 +110,37 @@ const sendExperimentalCarousel = async (
   };
 
   const additionalNodes = [...interactiveNativeFlowAdditionalNodes()];
+  const interactiveContextInfo =
+    variant === "interactive-context-only" || variant === "full-stack"
+      ? {
+          isForwarded: true,
+          forwardingScore: 1,
+          forwardedAiBotMessageInfo: {
+            botName: "Berry AI Carousel",
+            botJid: "berry-ai-carousel@bot",
+            creatorName: "BerrySDK",
+          },
+        }
+      : undefined;
 
-  if (variant === "top-level-plus-card") {
+  if (variant === "top-level-plus-card" || variant === "full-stack") {
     outerMessageContextInfo.supportPayload = "{}";
     additionalNodes.push(botNode);
   }
+
+  const interactiveMessageAdditionalMetadata =
+    variant === "full-stack"
+      ? {
+          isGalaxyFlowCompleted: true,
+        }
+      : undefined;
+
+  const bodyTextByVariant: Record<typeof variant, string> = {
+    "per-card-only": "Experimental: metadata de IA somente nos cards",
+    "top-level-plus-card": "Experimental: AI label no topo + metadata nos cards",
+    "interactive-context-only": "Experimental: contextInfo no interactiveMessage",
+    "full-stack": "Experimental: topo + interactive context + card metadata",
+  };
 
   const message = generateWAMessageFromContent(
     to,
@@ -118,16 +148,19 @@ const sendExperimentalCarousel = async (
       viewOnceMessage: {
         message: {
           messageContextInfo: outerMessageContextInfo,
+          ...(interactiveMessageAdditionalMetadata
+            ? {
+                interactiveMessageAdditionalMetadata,
+              }
+            : {}),
           interactiveMessage: proto.Message.InteractiveMessage.create({
             body: {
-              text:
-                variant === "per-card-only"
-                  ? "Experimental: metadata de IA somente nos cards"
-                  : "Experimental: AI label no topo + metadata nos cards",
+              text: bodyTextByVariant[variant],
             },
             footer: {
               text: "BerryProtocol experimental",
             },
+            ...(interactiveContextInfo ? { contextInfo: interactiveContextInfo } : {}),
             carouselMessage: {
               cards,
               messageVersion: 1,
@@ -156,6 +189,12 @@ client.once("connection.open", async () => {
 
     const topLevelPlusCard = await sendExperimentalCarousel("top-level-plus-card");
     console.log("EXPERIMENTAL TOP LEVEL + CARD AI:", topLevelPlusCard);
+
+    const interactiveContextOnly = await sendExperimentalCarousel("interactive-context-only");
+    console.log("EXPERIMENTAL INTERACTIVE CONTEXT AI:", interactiveContextOnly);
+
+    const fullStack = await sendExperimentalCarousel("full-stack");
+    console.log("EXPERIMENTAL FULL STACK AI:", fullStack);
   } catch (error) {
     console.error("Falha no teste experimental de AI por card:", error);
   } finally {
