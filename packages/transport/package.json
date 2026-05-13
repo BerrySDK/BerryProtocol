@@ -1,15 +1,14 @@
 {
-  "name": "berryotp",
-  "version": "0.1.5",
-  "description": "Facade package for BerryOTP so consumers can import it without the @berrysdk scope.",
-  "author": "Lipe Devv and Berry Protocol",
+  "name": "@berrysdk/transport",
+  "version": "0.1.0",
+  "description": "Internal WhatsApp Web transport layer for BerrySDK.",
+  "author": "BerrySDK",
   "license": "Apache-2.0",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist",
-    "README.md"
+    "dist"
   ],
   "exports": {
     ".": {
@@ -23,9 +22,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@berrysdk/berry-otp": "0.1.5"
-  },
-  "peerDependencies": {
-    "berryprotocol": "^0.1.5"
+    "baileys": "7.0.0-rc10"
   }
 }

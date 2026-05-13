@@ -6,10 +6,10 @@
  * @author Lipe Devv and Berry Protocol
  */
 import pino, { type Logger } from "pino";
+import qrcode from "qrcode-terminal";
 import { randomUUID } from "node:crypto";
 import { type URL } from "node:url";
 import { SessionManager, SQLiteSessionStore } from "@berrysdk/auth";
-import { type AnyMessageContent } from "baileys";
 import {
   type BerryAuthOptions,
   BerryEventBus,
@@ -43,6 +43,8 @@ export interface BerryClientOptions {
   logger?: Logger;
   reconnectMaxAttempts?: number;
   reconnectDelayMs?: number;
+  printQrInTerminal?: boolean;
+  qrSmall?: boolean;
 }
 
 type BerryMediaSource = Buffer | { url: string | URL };
@@ -583,6 +585,12 @@ export class BerryClient {
         authMethod: "qr",
         qr: value,
       });
+
+      if (this.options.printQrInTerminal !== false) {
+        qrcode.generate(value, {
+          small: this.options.qrSmall ?? true,
+        });
+      }
     });
 
     this.bus.on("auth.pairing_code", async ({ code }) => {

@@ -2,7 +2,7 @@
 
 BerryProtocol is a modular TypeScript SDK for connecting to the real WhatsApp Web stack.
 
-Internally it uses Baileys as the transport engine, while exposing a BerryProtocol API focused on:
+Internally it uses a BerrySDK transport engine, while exposing a BerryProtocol API focused on:
 
 - modular architecture
 - typed events
@@ -800,4 +800,4 @@ Use `qr` if you want a renderable terminal QR instead.
 
 ## Important note
 
-BerryProtocol is operational through Baileys as the underlying WhatsApp Web implementation. The Berry layer focuses on API shape, modularity, persistence, and operational ergonomics on top of that real transport.
+BerryProtocol is operational through the BerrySDK transport layer for WhatsApp Web. The Berry layer focuses on API shape, modularity, persistence, and operational ergonomics on top of that real transport.

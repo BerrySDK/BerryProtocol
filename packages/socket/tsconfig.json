@@ -17,6 +17,9 @@
       "path": "../protocol"
     },
     {
+      "path": "../transport"
+    },
+    {
       "path": "../wa-message"
     }
   ]

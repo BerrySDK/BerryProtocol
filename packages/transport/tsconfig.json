@@ -8,17 +8,5 @@
   },
   "include": [
     "src"
-  ],
-  "references": [
-    {
-      "path": "../events"
-    },
-    {
-      "path": "../transport"
-    },
-    {
-      "path": "../protocol"
-    }
   ]
 }
-

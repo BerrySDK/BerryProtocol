@@ -17,7 +17,7 @@ import makeWASocket, {
   useMultiFileAuthState,
   type WAMessage,
   type WASocket,
-} from "baileys";
+} from "@berrysdk/transport";
 import pino, { type Logger } from "pino";
 import {
   type BerryAuthOptions,

@@ -22,6 +22,6 @@
     "dependencies":  {
                          "@berrysdk/events":  "0.1.1",
                          "@berrysdk/proto":  "0.1.1",
-                         "baileys":  "7.0.0-rc10"
+                         "@berrysdk/transport":  "0.1.0"
                      }
 }

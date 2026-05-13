@@ -13,7 +13,7 @@ import {
   type ListPayload,
   type MessageAck,
 } from "@berrysdk/events";
-import { proto, type BinaryNode, type WAMessage } from "baileys";
+import { proto, type BinaryNode, type WAMessage } from "@berrysdk/transport";
 
 const parseJsonObject = (value?: string | null): Record<string, unknown> | null => {
   if (!value) {
