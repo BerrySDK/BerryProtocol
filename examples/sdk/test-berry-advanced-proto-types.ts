@@ -20,6 +20,18 @@ if (!to) {
 type InternalSocket = {
   user?: { id?: string };
   waUploadToServer: unknown;
+  groupInviteCode?: (jid: string) => Promise<string | undefined>;
+  newsletterMetadata?: (
+    type: "invite" | "jid",
+    key: string,
+  ) => Promise<
+    | {
+        id?: string;
+        name?: string;
+        invite?: string;
+      }
+    | null
+  >;
   relayMessage: (
     jid: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -204,14 +216,22 @@ const sendGroupInvite = async () => {
   const groupJid = process.env.BERRY_TEST_GROUP_JID;
   const inviteCode = process.env.BERRY_TEST_GROUP_INVITE_CODE;
 
-  if (!groupJid || !inviteCode) {
-    log("GROUP INVITE", "SKIP", "defina BERRY_TEST_GROUP_JID e BERRY_TEST_GROUP_INVITE_CODE");
+  if (!groupJid) {
+    log("GROUP INVITE", "SKIP", "defina pelo menos BERRY_TEST_GROUP_JID");
+    return;
+  }
+
+  const sock = getInternalSock();
+  const resolvedInviteCode = inviteCode ?? (await sock.groupInviteCode?.(groupJid));
+
+  if (!resolvedInviteCode) {
+    log("GROUP INVITE", "SKIP", "nao foi possivel resolver invite code do grupo");
     return;
   }
 
   const invite = proto.Message.GroupInviteMessage.create({
     groupJid,
-    inviteCode,
+    inviteCode: resolvedInviteCode,
     inviteExpiration:
       Number(process.env.BERRY_TEST_GROUP_INVITE_EXPIRATION) ||
       Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
@@ -322,17 +342,32 @@ const sendShopStorefrontMessage = async () => {
 
 const sendNewsletterAdminInvite = async () => {
   const newsletterJid = process.env.BERRY_TEST_NEWSLETTER_JID;
+  const newsletterInvite = process.env.BERRY_TEST_NEWSLETTER_INVITE;
 
-  if (!newsletterJid) {
-    log("NEWSLETTER ADMIN INVITE", "SKIP", "defina BERRY_TEST_NEWSLETTER_JID");
+  if (!newsletterJid && !newsletterInvite) {
+    log("NEWSLETTER ADMIN INVITE", "SKIP", "defina BERRY_TEST_NEWSLETTER_JID ou BERRY_TEST_NEWSLETTER_INVITE");
+    return;
+  }
+
+  const sock = getInternalSock();
+  const metadata =
+    (newsletterJid
+      ? await sock.newsletterMetadata?.("jid", newsletterJid)
+      : newsletterInvite
+        ? await sock.newsletterMetadata?.("invite", newsletterInvite)
+        : null) ?? null;
+  const resolvedNewsletterJid = newsletterJid ?? metadata?.id;
+
+  if (!resolvedNewsletterJid) {
+    log("NEWSLETTER ADMIN INVITE", "SKIP", "nao foi possivel resolver o newsletterJid");
     return;
   }
 
   const prepared = await maybePrepareImage();
   return sendRaw("NEWSLETTER ADMIN INVITE", {
     newsletterAdminInviteMessage: proto.Message.NewsletterAdminInviteMessage.create({
-      newsletterJid,
-      newsletterName: process.env.BERRY_TEST_NEWSLETTER_NAME ?? "Newsletter Berry",
+      newsletterJid: resolvedNewsletterJid,
+      newsletterName: process.env.BERRY_TEST_NEWSLETTER_NAME ?? metadata?.name ?? "Newsletter Berry",
       jpegThumbnail: prepared.imageMessage?.jpegThumbnail,
       caption: "Convite admin experimental",
       inviteExpiration:
@@ -343,17 +378,32 @@ const sendNewsletterAdminInvite = async () => {
 
 const sendNewsletterFollowerInvite = async () => {
   const newsletterJid = process.env.BERRY_TEST_NEWSLETTER_JID;
+  const newsletterInvite = process.env.BERRY_TEST_NEWSLETTER_INVITE;
 
-  if (!newsletterJid) {
-    log("NEWSLETTER FOLLOWER INVITE", "SKIP", "defina BERRY_TEST_NEWSLETTER_JID");
+  if (!newsletterJid && !newsletterInvite) {
+    log("NEWSLETTER FOLLOWER INVITE", "SKIP", "defina BERRY_TEST_NEWSLETTER_JID ou BERRY_TEST_NEWSLETTER_INVITE");
+    return;
+  }
+
+  const sock = getInternalSock();
+  const metadata =
+    (newsletterJid
+      ? await sock.newsletterMetadata?.("jid", newsletterJid)
+      : newsletterInvite
+        ? await sock.newsletterMetadata?.("invite", newsletterInvite)
+        : null) ?? null;
+  const resolvedNewsletterJid = newsletterJid ?? metadata?.id;
+
+  if (!resolvedNewsletterJid) {
+    log("NEWSLETTER FOLLOWER INVITE", "SKIP", "nao foi possivel resolver o newsletterJid");
     return;
   }
 
   const prepared = await maybePrepareImage();
   return sendRaw("NEWSLETTER FOLLOWER INVITE", {
     newsletterFollowerInviteMessageV2: proto.Message.NewsletterFollowerInviteMessage.create({
-      newsletterJid,
-      newsletterName: process.env.BERRY_TEST_NEWSLETTER_NAME ?? "Newsletter Berry",
+      newsletterJid: resolvedNewsletterJid,
+      newsletterName: process.env.BERRY_TEST_NEWSLETTER_NAME ?? metadata?.name ?? "Newsletter Berry",
       jpegThumbnail: prepared.imageMessage?.jpegThumbnail,
       caption: "Convite follower experimental",
     }),
