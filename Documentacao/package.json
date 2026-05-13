@@ -10,11 +10,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "fumadocs-ui": "latest",
+    "fumadocs-core": "^16.8.10",
+    "fumadocs-ui": "^16.8.10",
     "lucide-react": "^0.511.0",
-    "next": "^15.3.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.16"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
