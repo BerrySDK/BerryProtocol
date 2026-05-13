@@ -20,7 +20,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@wppconnect/wa-proto": "^2.3000.1039300149",
+    "@wppconnect/wa-proto": "^2.3000.1030818676",
     "protobufjs": "^7.4.0"
   }
 }
