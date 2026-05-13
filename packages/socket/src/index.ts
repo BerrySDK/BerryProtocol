@@ -9,6 +9,7 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import makeWASocket, {
   type AnyMessageContent,
+  type BinaryNode,
   DisconnectReason,
   downloadMediaMessage,
   fetchLatestBerryWebVersion,
@@ -62,6 +63,7 @@ export interface SocketOptions {
 type MessageContent = Record<string, unknown>;
 const shouldDebugOutgoingMessages = process.env.BERRY_DEBUG_WA_MESSAGE === "1";
 const MAX_CAROUSEL_CARDS = 10;
+const BIZ_BOT_SUPPORT_PAYLOAD = "{}";
 
 const debugJsonReplacer = (_key: string, value: unknown) => {
   if (Buffer.isBuffer(value)) {
@@ -87,6 +89,17 @@ const assertTransportJid = (jid: string): string => {
 
   return normalized;
 };
+
+const isPrivateChatJid = (jid: string): boolean =>
+  jid.endsWith("@s.whatsapp.net") || jid.endsWith("@lid");
+
+const aiLabelAdditionalNode = (): BinaryNode => ({
+  tag: "bot",
+  attrs: {
+    biz_bot: "1",
+  },
+  content: undefined,
+});
 
 const generateNumericPairingCode = (): string =>
   Math.floor(10_000_000 + Math.random() * 90_000_000).toString();
@@ -358,6 +371,7 @@ export class BerrySocket {
   async sendCarouselMessage(
     to: string,
     payload: CarouselMessagePayload,
+    options?: { ai?: boolean },
   ): Promise<WAMessage> {
     if (!this.sock?.user?.id) {
       throw new Error("Socket is not connected.");
@@ -385,15 +399,25 @@ export class BerrySocket {
     const fullMessage = generateWAMessageFromContent(recipientJid, content, {
       userJid: this.sock.user.id,
     });
+
+    if (options?.ai) {
+      this.applyAiLabelToCarouselMessage(recipientJid, fullMessage);
+    }
+
     this.logOutgoingMessage("carousel", fullMessage);
 
-    const additionalNodes = preparedCards.some((card) => !!card.nativeFlowMessage?.buttons?.length)
-      ? interactiveNativeFlowAdditionalNodes()
-      : undefined;
+    const additionalNodes: BinaryNode[] = [];
+    if (preparedCards.some((card) => !!card.nativeFlowMessage?.buttons?.length)) {
+      additionalNodes.push(...interactiveNativeFlowAdditionalNodes());
+    }
+
+    if (options?.ai) {
+      additionalNodes.push(aiLabelAdditionalNode());
+    }
 
     await this.sock.relayMessage(recipientJid, fullMessage.message!, {
       messageId: fullMessage.key.id!,
-      ...(additionalNodes ? { additionalNodes } : {}),
+      ...(additionalNodes.length ? { additionalNodes } : {}),
     });
 
     return fullMessage as WAMessage;
@@ -469,6 +493,21 @@ export class BerrySocket {
         throw new Error(`Carousel card ${index + 1} contains image but carouselCardType is "video".`);
       }
     }
+  }
+
+  private applyAiLabelToCarouselMessage(jid: string, message: WAMessage): void {
+    if (!isPrivateChatJid(jid)) {
+      throw new Error("AI labeled carousel messages are only allowed in private chat.");
+    }
+
+    const viewOnceMessage = message.message?.viewOnceMessage;
+    const innerMessage = viewOnceMessage?.message;
+    if (!innerMessage) {
+      throw new Error("BerryProtocol expected a viewOnceMessage wrapper for carousel AI label injection.");
+    }
+
+    innerMessage.messageContextInfo ||= {};
+    innerMessage.messageContextInfo.supportPayload = BIZ_BOT_SUPPORT_PAYLOAD;
   }
 
   private async prepareCarouselCard(

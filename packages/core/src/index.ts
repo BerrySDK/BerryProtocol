@@ -383,7 +383,10 @@ export class BerryClient {
       const carousel = await this.normalizeCarouselPayload(content);
       return {
         message: createCarouselMessage(to, carousel),
-        dispatch: (recipientJid) => this.socket.sendCarouselMessage(recipientJid, carousel),
+        dispatch: (recipientJid) =>
+          this.socket.sendCarouselMessage(recipientJid, carousel, {
+            ai: content.ai,
+          }),
       };
     }
 
@@ -603,7 +606,7 @@ export class BerryClient {
   }
 
   private async normalizeCarouselPayload(
-    content: Pick<BerrySendMessageContent, "text" | "footer" | "cards" | "carouselCardType">,
+    content: Pick<BerrySendMessageContent, "text" | "footer" | "cards" | "carouselCardType" | "ai">,
   ): Promise<CarouselMessagePayload> {
     const cards = content.cards ?? [];
     if (!cards.length) {
@@ -621,6 +624,7 @@ export class BerryClient {
       text: content.text ?? "",
       footer: content.footer,
       carouselCardType: content.carouselCardType,
+      ai: content.ai,
       cards: await Promise.all(cards.map((card) => this.normalizeCarouselCard(card))),
     };
   }

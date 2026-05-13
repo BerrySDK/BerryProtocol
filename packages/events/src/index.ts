@@ -149,6 +149,7 @@ export interface CarouselMessagePayload {
   footer?: string;
   cards: CarouselCard[];
   carouselCardType?: CarouselCardType;
+  ai?: boolean;
 }
 
 export interface ListRow {

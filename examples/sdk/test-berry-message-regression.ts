@@ -11,7 +11,7 @@ const assertRejects = async (label: string, fn: () => Promise<unknown>) => {
 
 const runLocalValidationSuite = async () => {
   const client = new BerryProtocol({
-    sessionId: "regression-validation",
+    sessionId: "carousel-example",
     printQrInTerminal: false,
   });
 
@@ -68,7 +68,7 @@ const runLiveSuite = async () => {
   }
 
   const client = new BerryProtocol({
-    sessionId: "regression-live",
+    sessionId: "carousel-example",
   });
 
   client.on("message.ack", (ack) => {

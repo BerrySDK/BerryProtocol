@@ -8,7 +8,7 @@ if (!to) {
 }
 
 const client = new BerryProtocol({
-  sessionId: "carousel-video-example",
+  sessionId: "carousel-example",
 });
 
 client.once("connection.open", async () => {

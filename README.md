@@ -265,6 +265,7 @@ BerryProtocol supports native WhatsApp carousel messages through:
 await client.sendCarousel(jid, {
   text: "Confira nossas pizzas!",
   footer: "Deslize para ver mais",
+  ai: true,
   cards: [
     {
       title: "Pizza Calabresa",
@@ -319,6 +320,7 @@ Supported card capabilities:
 - quick reply buttons
 - copy-code buttons
 - cta-url buttons
+- AI label in private chats
 - mixed media carousels
 
 Rules:
@@ -332,10 +334,12 @@ Examples:
 - [examples/sdk/carousel.ts](C:/Users/felip/BerryProtocol/examples/sdk/carousel.ts)
 - [examples/sdk/carousel-video.ts](C:/Users/felip/BerryProtocol/examples/sdk/carousel-video.ts)
 - [examples/sdk/carousel-mixed.ts](C:/Users/felip/BerryProtocol/examples/sdk/carousel-mixed.ts)
+- [examples/sdk/carousel-ai.ts](C:/Users/felip/BerryProtocol/examples/sdk/carousel-ai.ts)
 
 Note:
 
 Carousel messages are internally wrapped in `viewOnceMessage` for better WhatsApp client compatibility.
+When `ai: true` is present, BerryProtocol injects the WhatsApp AI label metadata for private chats.
 
 ## Regression Test Script
 

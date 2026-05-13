@@ -130,7 +130,7 @@ const runLiveMatrix = async () => {
   console.log("Running live compatibility matrix...");
 
   const client = new BerryProtocol({
-    sessionId: "compat-matrix-live",
+    sessionId: "carousel-example",
   });
 
   const ackLog = new Map<string, string[]>();
@@ -210,6 +210,23 @@ const runLiveMatrix = async () => {
     ],
   });
   console.log("CAROUSEL IMAGE:", carousel.id);
+
+  const aiCarousel = await client.sendCarousel(to, {
+    text: "Carousel com AI label",
+    footer: "BerryProtocol AI",
+    ai: true,
+    carouselCardType: "image",
+    cards: [
+      {
+        title: "Pizza AI Calabresa",
+        body: "Card com selo de IA",
+        footer: "R$ 39,90",
+        image: { url: process.env.BERRY_TEST_IMAGE_URL ?? DEFAULT_IMAGE_URL },
+        buttons: [{ id: "pizza_ai_calabresa", title: "Escolher", kind: "quick_reply" }],
+      },
+    ],
+  });
+  console.log("CAROUSEL AI:", aiCarousel.id);
 
   const mixedCarousel = await client.sendCarousel(to, {
     text: "Carousel mixed matrix",
