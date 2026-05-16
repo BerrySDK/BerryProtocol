@@ -1,0 +1,59 @@
+{
+  "name": "berryprotocol",
+  "version": "0.1.10",
+  "description": "SDK principal do BerrySDK para automação WhatsApp Web com BerryProtocol.",
+  "author": "BerrySDK",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BerrySDK/BerryProtocol.git"
+  },
+  "homepage": "https://github.com/BerrySDK/BerryProtocol#readme",
+  "bugs": {
+    "url": "https://github.com/BerrySDK/BerryProtocol/issues"
+  },
+  "keywords": [
+    "whatsapp",
+    "whatsapp-web",
+    "berrysdk",
+    "berryprotocol",
+    "bot",
+    "automation",
+    "api",
+    "sdk"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "if exist dist rmdir /s /q dist",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@berrysdk/core": "0.1.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
