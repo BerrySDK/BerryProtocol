@@ -1,0 +1,24 @@
+# Webhooks
+
+Configure one webhook per instance.
+
+## Endpoints
+
+- `POST /webhook/set/:instanceName`
+- `GET /webhook/find/:instanceName`
+
+## Example
+
+```json
+{
+  "enabled": true,
+  "url": "https://example.com/webhooks/berryapi",
+  "events": [
+    "connection.update",
+    "messages.upsert",
+    "send.message"
+  ]
+}
+```
+
+BerryAPI dispatches normalized envelopes for supported events.

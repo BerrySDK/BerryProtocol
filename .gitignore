@@ -11,6 +11,8 @@ packages/*/.tsbuildinfo
 .vscode
 berryprotocol.db
 berrysdk.db
+berryapi.sqlite
+packages/berryapi/*.sqlite
 _reference_baileys2
 _vendor_whatsapp_proto
 _vendor_wppconnect_wa_proto

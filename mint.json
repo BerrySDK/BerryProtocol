@@ -1,0 +1,24 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "BerryAPI",
+  "theme": "purple",
+  "colors": {
+    "primary": "#7c3aed",
+    "light": "#a855f7",
+    "dark": "#5b21b6"
+  },
+  "navigation": [
+    {
+      "group": "Introduction",
+      "pages": [
+        "docs/index",
+        "docs/getting-started",
+        "docs/instances",
+        "docs/messages",
+        "docs/webhooks",
+        "docs/realtime",
+        "docs/openapi"
+      ]
+    }
+  ]
+}

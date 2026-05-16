@@ -256,12 +256,16 @@ export class BerrySocket {
     this.sock = undefined;
   }
 
-  async sendMessage(to: string, content: MessageContent): Promise<WAMessage> {
+  async sendMessage(
+    to: string,
+    content: MessageContent,
+    options?: Record<string, unknown>,
+  ): Promise<WAMessage> {
     if (!this.sock) {
       throw new Error("Socket is not connected.");
     }
 
-    const result = await this.sock.sendMessage(to, content as never);
+    const result = await this.sock.sendMessage(to, content as never, options as never);
     if (!result) {
       throw new Error("WhatsApp did not return a message receipt for the send operation.");
     }
@@ -273,8 +277,12 @@ export class BerrySocket {
     return result;
   }
 
-  async sendTransportMessage(to: string, content: AnyMessageContent): Promise<WAMessage> {
-    return this.sendMessage(assertTransportJid(to), content as MessageContent);
+  async sendTransportMessage(
+    to: string,
+    content: AnyMessageContent,
+    options?: Record<string, unknown>,
+  ): Promise<WAMessage> {
+    return this.sendMessage(assertTransportJid(to), content as MessageContent, options);
   }
 
   async editMessage(to: string, messageId: string, text: string): Promise<WAMessage> {

@@ -9,6 +9,7 @@ import pino, { type Logger } from "pino";
 import qrcode from "qrcode-terminal";
 import { randomUUID } from "node:crypto";
 import { type URL } from "node:url";
+import type { AnyMessageContent } from "@berrysdk/transport";
 import { SessionManager, SQLiteSessionStore } from "@berrysdk/auth";
 import {
   type BerryAuthOptions,
@@ -108,6 +109,16 @@ export interface BerrySendMessageContent {
   listMessage?: ListPayload;
   buttonsMessage?: ButtonsPayload;
   interactiveMessage?: InteractivePayload;
+  [key: string]: unknown;
+}
+
+export interface BerrySendRawOptions {
+  quoted?: unknown;
+  mentions?: string[];
+  contextInfo?: Record<string, unknown>;
+  ephemeralExpiration?: number;
+  forwardingScore?: number;
+  statusJidList?: string[];
   [key: string]: unknown;
 }
 
@@ -367,6 +378,31 @@ export class BerryClient {
         id: result.key.id ?? normalized.message.id,
         ack: "sent" as const,
       };
+      this.bus.emit("message.sent", sent);
+      return sent;
+    });
+  }
+
+  async sendRaw(
+    to: string,
+    content: Record<string, unknown>,
+    options?: BerrySendRawOptions,
+  ): Promise<OutgoingMessage> {
+    return this.queue.enqueue(async () => {
+      const recipientJid = assertWhatsAppJid(to);
+      const result = await this.socket.sendTransportMessage(
+        recipientJid,
+        content as AnyMessageContent,
+        options as Record<string, unknown> | undefined,
+      );
+
+      const sent = {
+        id: result.key.id ?? randomUUID(),
+        to: recipientJid,
+        timestamp: new Date().toISOString(),
+        ack: "sent",
+        type: "interactive",
+      } as OutgoingMessage;
       this.bus.emit("message.sent", sent);
       return sent;
     });

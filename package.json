@@ -20,12 +20,16 @@
                          "qrcode-terminal":  "^0.12.0"
                      },
     "scripts":  {
-        "build":  "tsc -b packages/events packages/transport packages/protocol packages/messages packages/wa-message packages/media packages/store packages/auth packages/socket packages/core packages/berry-otp packages/berryprotocol packages/berryotp packages/gateway packages/cli",
+        "build":  "tsc -b packages/events packages/transport packages/protocol packages/messages packages/wa-message packages/media packages/store packages/auth packages/socket packages/core packages/berry-otp packages/berryprotocol packages/berryotp packages/gateway packages/cli packages/berryapi",
                     "clean":  "powershell -NoProfile -Command \"Get-ChildItem packages -Directory | ForEach-Object { Remove-Item -Recurse -Force (Join-Path $_.FullName \u0027dist\u0027) -ErrorAction SilentlyContinue; Remove-Item -Force (Join-Path $_.FullName \u0027.tsbuildinfo\u0027) -ErrorAction SilentlyContinue }\"",
                     "prepare:publish":  "npm run clean \u0026\u0026 npm run build",
                     "pack:check":  "npm pack --workspaces --json",
+                    "dev": "npm run dev --workspace berryapi",
+                    "start": "npm run start --workspace berryapi",
                     "dev:gateway":  "npm run build \u0026\u0026 node packages/gateway/dist/index.js",
                     "dev:cli":  "npm run build \u0026\u0026 node packages/cli/dist/index.js",
+                    "dev:berryapi": "npm run dev --workspace berryapi",
+                    "start:berryapi": "npm run start --workspace berryapi",
                     "start:gateway":  "node packages/gateway/dist/index.js",
                     "start:cli":  "node packages/cli/dist/index.js"
                 },

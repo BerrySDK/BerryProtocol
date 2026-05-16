@@ -1,0 +1,97 @@
+# Messages
+
+BerryAPI exposes modern WhatsApp Web message endpoints.
+
+## Highlights
+
+- Text
+- Media
+- Buttons
+- Template Buttons
+- Copy Buttons
+- Carousel
+- Lists
+- Polls
+- AI Label Text
+- AI Label Carousel
+- View once
+- Reactions
+- Location
+- Contacts
+- Status
+- Product, catalog and collection
+
+## Examples
+
+### Send Text
+
+```json
+{
+  "to": "5511999999999@s.whatsapp.net",
+  "text": "Hello from BerryAPI"
+}
+```
+
+### Send Media
+
+```json
+{
+  "to": "5511999999999@s.whatsapp.net",
+  "url": "https://example.com/image.jpg",
+  "caption": "Image from BerryAPI"
+}
+```
+
+### Send Buttons
+
+```json
+{
+  "to": "5511999999999@s.whatsapp.net",
+  "text": "Choose one option",
+  "footer": "BerryAPI",
+  "buttons": [
+    {
+      "id": "buy_now",
+      "title": "Buy now",
+      "type": "reply"
+    }
+  ]
+}
+```
+
+### Send Carousel
+
+```json
+{
+  "to": "5511999999999@s.whatsapp.net",
+  "text": "Confira nossas pizzas!",
+  "footer": "BerryAPI carousel",
+  "carouselCardType": "mixed",
+  "cards": [
+    {
+      "title": "Pizza Calabresa",
+      "body": "Calabresa premium",
+      "footer": "R$ 39,90",
+      "image": {
+        "url": "https://images.unsplash.com/photo-1513104890138-7c749659a591"
+      },
+      "buttons": [
+        {
+          "id": "pizza_calabresa",
+          "title": "Escolher",
+          "kind": "quick_reply"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Send AI Text
+
+```json
+{
+  "to": "5511999999999@s.whatsapp.net",
+  "text": "Ola! Essa mensagem deve aparecer com AI label em chat privado."
+}
+```

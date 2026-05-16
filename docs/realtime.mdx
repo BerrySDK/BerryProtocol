@@ -1,0 +1,28 @@
+# Realtime
+
+BerryAPI exposes a WebSocket stream for live instance events.
+
+## Connect
+
+```text
+ws://localhost:3000/ws?apiKey=berryapi_dev_key
+```
+
+To filter by instance:
+
+```text
+ws://localhost:3000/ws?apiKey=berryapi_dev_key&instanceName=store-01
+```
+
+## Event Types
+
+- `connection.update`
+- `qrcode.updated`
+- `messages.upsert`
+- `messages.update`
+- `messages.delete`
+- `chats.update`
+- `contacts.update`
+- `groups.update`
+- `presence.update`
+- `send.message`
