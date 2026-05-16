@@ -1,52 +1,68 @@
 # BerryProtocol
 
-SDK principal do **BerrySDK** para automação com WhatsApp Web.
+BerryProtocol is the public **BerrySDK** package for building WhatsApp Web automations in Node.js.
 
-O `berryprotocol` é o pacote público que desenvolvedores instalam no npm para criar bots, integrações, fluxos, autenticação com QR Code, mensagens interativas, OTP e automações construídas em cima do ecossistema BerrySDK.
+This repository is designed to be the public-facing SDK repository, similar in spirit to how developers consume Baileys: a single package entrypoint, a structured source tree, examples, GitHub community files, and a clean npm installation story.
 
-## Instalação
+## Installation
 
 ```bash
 npm install berryprotocol
 ```
 
-## Exemplo rápido
+## Quick start
 
 ```ts
 import BerryProtocol from "berryprotocol";
 
 const client = new BerryProtocol({
-  sessionId: "minha-sessao",
+  sessionId: "my-session",
 });
 
 client.on("auth.qr", ({ value }) => {
-  console.log("Escaneie o QR:", value);
+  console.log("Scan this QR code:", value);
 });
 
 client.on("connection.open", () => {
-  console.log("Conectado.");
+  console.log("Connected.");
 });
 
 await client.connectWithQr();
 ```
 
-## O que você pode fazer
+## What you get
 
-- conectar sessões com `QR Code`, `link` ou `pairing code`
-- enviar `text`, `image`, `audio`, `document` e `reaction`
-- enviar mensagens interativas como `buttons`, `list` e `carousel`
-- usar recursos modernos como `AI label`
-- integrar com módulos como `BerryOTP`
+- QR, link, and pairing-code authentication
+- text, media, buttons, lists, reactions, location, and contacts
+- grouped exports for auth, socket, store, utils, messages, and types
+- a repository layout that is easier to browse and document
+- a public package entrypoint backed by the BerrySDK ecosystem
 
-## Estrutura do projeto
+## Repository structure
 
-Este repositório público representa o pacote npm `berryprotocol`.
-
-- `src/`: código-fonte do pacote público
-- `example/`: exemplos rápidos de uso
-- `.github/`: workflows, templates de issue e PR
-
-Os códigos internos e experimentais do monorepo principal ficam no repositório privado do BerrySDK.
+```text
+BerryProtocol/
+├── .github/
+│   ├── workflows/
+│   └── ISSUE_TEMPLATE/
+├── src/
+│   ├── Defaults/
+│   ├── Socket/
+│   ├── Utils/
+│   ├── Types/
+│   ├── Store/
+│   ├── Auth/
+│   ├── Media/
+│   ├── Messages/
+│   ├── index.ts
+│   └── Utils.ts
+├── Example/
+│   └── example.ts
+├── package.json
+├── README.md
+├── README_PORTUGUESE.md
+└── LICENSE
+```
 
 ## Scripts
 
@@ -55,21 +71,19 @@ npm install
 npm run build
 ```
 
-## Compatibilidade
+## Package scope
 
-- Node.js `>= 20`
-- ESM nativo
+`berryprotocol` is the public package developers install from npm.
 
-## NPM
+Internal and experimental monorepo code lives in the private BerrySDK repository, while this repository is optimized for public consumption, onboarding, and package distribution.
 
-- pacote público: [`berryprotocol`](https://www.npmjs.com/package/berryprotocol)
-
-## Comunidade
+## Community
 
 - Issues: [github.com/BerrySDK/BerryProtocol/issues](https://github.com/BerrySDK/BerryProtocol/issues)
-- Segurança: veja [SECURITY.md](./SECURITY.md)
-- Contribuição: veja [CONTRIBUTING.md](./CONTRIBUTING.md)
+- Security: see [SECURITY.md](./SECURITY.md)
+- Contributions: see [CONTRIBUTING.md](./CONTRIBUTING.md)
+- Portuguese guide: see [README_PORTUGUESE.md](./README_PORTUGUESE.md)
 
-## Licença
+## License
 
-Apache-2.0. Veja [LICENSE](./LICENSE).
+Apache-2.0. See [LICENSE](./LICENSE).

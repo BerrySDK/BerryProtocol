@@ -1,16 +1,16 @@
-# Segurança
+# Security Policy
 
-Se você encontrar uma vulnerabilidade no `berryprotocol`, pedimos que não abra uma issue pública.
+If you discover a vulnerability in BerryProtocol, please do not open a public issue.
 
-## Como reportar
+## How to report
 
-Envie os detalhes por canal privado do BerrySDK, incluindo:
+Send the report through a private BerrySDK channel with:
 
-- descrição do problema
-- impacto esperado
-- passos para reproduzir
-- versão afetada
+- a description of the issue
+- expected impact
+- reproduction steps
+- affected version
 
-## Escopo
+## Scope
 
-Este repositório público representa o pacote `berryprotocol`. Questões envolvendo código privado ou infraestrutura interna podem ser tratadas separadamente pelo BerrySDK.
+This repository represents the public `berryprotocol` package. Issues involving private infrastructure or internal repositories may be handled separately by BerrySDK.

@@ -1,5 +1,5 @@
 name: Bug report
-description: Reporte um problema no BerryProtocol
+description: Report a problem in BerryProtocol
 title: "[Bug]: "
 labels:
   - bug
@@ -7,25 +7,25 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Descrição
-      description: Explique o problema encontrado.
+      label: Description
+      description: Describe the bug clearly.
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Passos para reproduzir
-      description: Liste os passos para reproduzir.
+      label: Steps to reproduce
+      description: List the steps required to reproduce the issue.
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Comportamento esperado
+      label: Expected behavior
     validations:
       required: true
   - type: input
     id: version
     attributes:
-      label: Versão do pacote
-      placeholder: ex. 0.1.9
+      label: Package version
+      placeholder: e.g. 0.1.10

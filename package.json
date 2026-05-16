@@ -1,7 +1,7 @@
 {
   "name": "berryprotocol",
   "version": "0.1.10",
-  "description": "SDK principal do BerrySDK para automação WhatsApp Web com BerryProtocol.",
+  "description": "Public BerrySDK SDK for WhatsApp Web automation powered by BerryProtocol.",
   "author": "BerrySDK",
   "license": "Apache-2.0",
   "type": "module",
@@ -10,6 +10,7 @@
   "files": [
     "dist",
     "README.md",
+    "README_PORTUGUESE.md",
     "LICENSE",
     "CHANGELOG.md"
   ],
@@ -19,6 +20,46 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./Defaults": {
+      "types": "./dist/Defaults/index.d.ts",
+      "import": "./dist/Defaults/index.js",
+      "default": "./dist/Defaults/index.js"
+    },
+    "./Socket": {
+      "types": "./dist/Socket/index.d.ts",
+      "import": "./dist/Socket/index.js",
+      "default": "./dist/Socket/index.js"
+    },
+    "./Utils": {
+      "types": "./dist/Utils/index.d.ts",
+      "import": "./dist/Utils/index.js",
+      "default": "./dist/Utils/index.js"
+    },
+    "./Types": {
+      "types": "./dist/Types/Index.d.ts",
+      "import": "./dist/Types/Index.js",
+      "default": "./dist/Types/Index.js"
+    },
+    "./Store": {
+      "types": "./dist/Store/index.d.ts",
+      "import": "./dist/Store/index.js",
+      "default": "./dist/Store/index.js"
+    },
+    "./Auth": {
+      "types": "./dist/Auth/index.d.ts",
+      "import": "./dist/Auth/index.js",
+      "default": "./dist/Auth/index.js"
+    },
+    "./Media": {
+      "types": "./dist/Media/index.d.ts",
+      "import": "./dist/Media/index.js",
+      "default": "./dist/Media/index.js"
+    },
+    "./Messages": {
+      "types": "./dist/Messages/index.d.ts",
+      "import": "./dist/Messages/index.js",
+      "default": "./dist/Messages/index.js"
     }
   },
   "repository": {
@@ -51,7 +92,13 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@berrysdk/core": "0.1.8"
+    "@berrysdk/auth": "0.1.1",
+    "@berrysdk/core": "0.1.8",
+    "@berrysdk/events": "0.1.4",
+    "@berrysdk/media": "0.1.1",
+    "@berrysdk/messages": "0.1.3",
+    "@berrysdk/store": "0.1.2",
+    "pino": "^9.6.0"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

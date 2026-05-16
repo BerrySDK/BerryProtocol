@@ -1,14 +1,14 @@
-## Resumo
+## Summary
 
-Descreva o que este PR altera.
+Describe what this pull request changes.
 
 ## Checklist
 
-- [ ] rodei `npm run build`
-- [ ] atualizei documentação quando necessário
-- [ ] validei impacto no pacote público
-- [ ] este PR é pequeno e objetivo
+- [ ] I ran `npm run build`
+- [ ] I updated documentation when needed
+- [ ] I validated the impact on the public npm package
+- [ ] This pull request is focused and reviewable
 
-## Testes
+## Testing
 
-Explique como validar esta mudança.
+Explain how this change was tested.

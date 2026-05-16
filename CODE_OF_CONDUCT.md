@@ -1,12 +1,12 @@
-# Código de Conduta
+# Code of Conduct
 
-Este projeto segue um padrão simples de respeito, colaboração e boa-fé.
+BerryProtocol expects respectful and constructive collaboration.
 
-Esperamos que todas as interações:
+By participating in this project, you agree to:
 
-- sejam respeitosas
-- aceitem feedback técnico sem ataques pessoais
-- promovam colaboração saudável
-- evitem assédio, discriminação e comportamento hostil
+- be respectful in discussions
+- accept technical feedback without personal attacks
+- avoid harassment, discrimination, and hostile behavior
+- help keep the project welcoming for maintainers and contributors
 
-Casos graves podem ser reportados pelos canais privados do BerrySDK.
+Serious concerns may be reported through private BerrySDK channels.

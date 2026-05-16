@@ -1,29 +1,31 @@
-# Contribuindo com o BerryProtocol
+# Contributing
 
-Obrigado por considerar contribuir com o `berryprotocol`.
+Thank you for your interest in contributing to BerryProtocol.
 
-## Fluxo recomendado
+## Recommended workflow
 
-1. abra uma issue descrevendo bug, melhoria ou dúvida
-2. crie uma branch a partir de `main`
-3. faça alterações pequenas e objetivas
-4. rode `npm install` e `npm run build`
-5. abra um Pull Request com contexto claro
+1. Open an issue describing the bug, question, or enhancement.
+2. Create a branch from `main`.
+3. Keep changes focused and easy to review.
+4. Run `npm install` and `npm run build`.
+5. Open a pull request with a clear summary and testing notes.
 
-## Convenções
+## Guidelines
 
 - Node.js `>= 20`
-- TypeScript
-- mensagens de commit objetivas
-- manter compatibilidade com o pacote npm público
+- TypeScript-first changes
+- small, readable commits
+- keep the public npm package stable and easy to consume
 
-## Pull Requests
+## Pull requests
 
-- descreva o problema resolvido
-- explique a abordagem
-- inclua passos de teste
-- adicione exemplos quando fizer sentido
+Please include:
 
-## Assuntos de segurança
+- what changed
+- why it changed
+- how it was tested
+- any documentation updates, if relevant
 
-Não abra issues públicas para falhas de segurança. Veja [SECURITY.md](./SECURITY.md).
+## Security
+
+Please do not disclose security issues in public issues. See [SECURITY.md](./SECURITY.md).
