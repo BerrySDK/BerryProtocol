@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/logo.svg" alt="BerryProtocol" width="220" />
+  <img src=".github/assets/banner.png" alt="BerryProtocol" width="220" />
 </p>
 
 <h1 align="center">BerryProtocol</h1>
