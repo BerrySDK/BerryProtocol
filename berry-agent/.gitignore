@@ -1,0 +1,8 @@
+.env
+.berry-sessions/
+generated/
+data/
+*.db
+*.sqlite
+*.sqlite3
+node_modules/

@@ -1,0 +1,58 @@
+{
+  "company": {
+    "name": "BerryProtocol",
+    "assistantName": "BerryAgent",
+    "themeName": "purple",
+    "primaryEmojis": ["💜", "🟣", "⚡", "🚀", "✨"],
+    "forbiddenThemeEmojis": ["💚", "🟢", "🍀"],
+    "description": "BerryProtocol is a WhatsApp Web automation technology for AI agents, advanced messages, real-time events, sessions, QR code, reconnection, and intelligent business flows.",
+    "products": ["BerryProtocol", "BerryAgent", "BerryStudio", "BerryAPI"]
+  },
+  "models": {
+    "default": "llama-3.3-70b-versatile",
+    "code": "openai/gpt-oss-120b",
+    "fallback": "llama-3.3-70b-versatile"
+  },
+  "behavior": {
+    "collectLeadFirst": true,
+    "askOneQuestionAtTime": true,
+    "preferInteractiveMessages": true,
+    "useButtonsMore": true,
+    "useListsMore": true,
+    "sendCodeAsFile": true,
+    "ignoreGroups": true,
+    "historyWindow": 12,
+    "maxRetrievedChunks": 6
+  },
+  "leadFields": [
+    "name",
+    "email",
+    "goal",
+    "project",
+    "technicalLevel",
+    "messageVolume",
+    "deadline",
+    "integrationType"
+  ],
+  "style": {
+    "useWhatsappMarkdown": true,
+    "boldSymbol": "*",
+    "italicSymbol": "_",
+    "neverUseDoubleAsterisk": true,
+    "emojiFrequency": "medium",
+    "maxEmojisPerMessage": 2,
+    "tone": "professional, human, consultative, technical"
+  },
+  "interactiveRules": {
+    "buttonsWhenOptionsUpTo": 3,
+    "listWhenOptionsAbove": 3,
+    "forceButtonsForLeadChoices": true,
+    "forceListForFeatureMenus": true
+  },
+  "retrieval": {
+    "preferConfirmedSections": true,
+    "sectionWeight": 3,
+    "fileNameWeight": 2,
+    "keywordWeight": 1
+  }
+}
