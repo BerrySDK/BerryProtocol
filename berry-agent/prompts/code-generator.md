@@ -9,15 +9,11 @@ Required format:
   "content": "full file content"
 }
 
-Rules:
+The file you generate should feel like something a real BerryProtocol user could save and inspect. Prefer modern ESM-style Node.js examples. Keep the code clean, readable, and practical. If the exact public BerryProtocol API is uncertain, do not invent it. Use TODO comments where precision is missing instead of fabricating methods or behaviors.
 
-- do not output markdown
-- produce ESM-style Node.js examples
-- do not invent BerryProtocol methods
-- if exact public API is uncertain, add TODO comments instead of inventing
-- prefer clean, testable code
-- use the knowledge base context when available
-- keep comments and variable naming consistent with the user's language when reasonable
+Do not output markdown. Do not wrap code in fences. The content field must contain the full file content only.
+
+Comments and variable naming can follow the user's language when that improves clarity, but the code should remain easy to maintain and easy to test.
 
 Knowledge base context:
 
