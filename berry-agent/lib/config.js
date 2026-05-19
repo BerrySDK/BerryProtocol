@@ -58,6 +58,17 @@ const DEFAULT_CONFIG = {
     fileNameWeight: 2,
     keywordWeight: 1,
   },
+  playbooks: {
+    enabled: false,
+    autoDetect: true,
+    scenarios: [
+      "first-contact",
+      "lead-qualification",
+      "technical-support",
+      "onboarding",
+      "cold-recovery",
+    ],
+  },
 };
 
 function mergeDeep(target, source) {

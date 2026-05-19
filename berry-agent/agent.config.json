@@ -61,5 +61,16 @@
     "sectionWeight": 3,
     "fileNameWeight": 2,
     "keywordWeight": 1
+  },
+  "playbooks": {
+    "enabled": false,
+    "autoDetect": true,
+    "scenarios": [
+      "first-contact",
+      "lead-qualification",
+      "technical-support",
+      "onboarding",
+      "cold-recovery"
+    ]
   }
 }

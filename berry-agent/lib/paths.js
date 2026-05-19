@@ -7,5 +7,6 @@ export function createPaths(baseDir) {
     rootDataDir: path.resolve(baseDir, "..", "data"),
     generatedDir: path.join(baseDir, "generated"),
     promptsDir: path.join(baseDir, "prompts"),
+    playbooksDir: path.join(baseDir, "playbooks"),
   };
 }

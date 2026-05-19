@@ -6,6 +6,7 @@ import { wantsOnlineSearch, webSearch } from "./web-search.js";
 import { sanitizeFileName, shortId, wantsCode, ensureDir } from "./utils.js";
 import { sendButtons, sendFile, sendList, sendText } from "./sender.js";
 import { detectUserLanguage, formatLanguageLabel } from "./language.js";
+import { loadOptionalPlaybook } from "./playbooks.js";
 
 function safeJsonParse(raw, fallback) {
   try {
@@ -49,12 +50,13 @@ export function createAgentRuntime({
       query,
       limit ?? config.behavior.maxRetrievedChunks,
     );
+    const playbook = await loadOptionalPlaybook(paths, config, query);
 
     const web = withWebSearch
       ? await webSearch(query)
       : { enabled: false, context: "" };
 
-    return { db, web };
+    return { db, web, playbook };
   }
 
   async function decideAction({ userId, text }) {
@@ -80,10 +82,14 @@ export function createAgentRuntime({
       companyTone: config.style.tone,
       styleExamples: (config.style.styleExamples || []).map((item) => `- ${item}`).join("\n"),
       userLanguage: formatLanguageLabel(detectedLanguage),
+      playbookMode: context.playbook.enabled
+        ? `Optional playbook active: ${context.playbook.scenarioTitle}`
+        : "No optional playbook active. Respond normally without forcing a scripted flow.",
       sourcesList: context.db.sources.length
         ? context.db.sources.map((source) => `- ${source}`).join("\n")
         : "- No local sources retrieved.",
       databaseContext: context.db.context || "No relevant local knowledge found.",
+      playbookContext: context.playbook.context || "No optional playbook active.",
       webContext: context.web.context || "No web context available.",
     });
 
