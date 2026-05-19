@@ -76,6 +76,9 @@ export function createAgentRuntime({
       assistantName: config.company.assistantName,
       maxEmojisPerMessage: config.style.maxEmojisPerMessage,
       brandEmojis: config.company.primaryEmojis.join(" "),
+      messageCadence: config.style.messageCadence,
+      companyTone: config.style.tone,
+      styleExamples: (config.style.styleExamples || []).map((item) => `- ${item}`).join("\n"),
       userLanguage: formatLanguageLabel(detectedLanguage),
       sourcesList: context.db.sources.length
         ? context.db.sources.map((source) => `- ${source}`).join("\n")
@@ -158,6 +161,10 @@ export function createAgentRuntime({
     const prompt = await loadPrompt(paths, "answer", {
       databaseContext: db.context || "No relevant local knowledge found.",
       webContext: extraContext || "No web context available.",
+      maxEmojisPerMessage: config.style.maxEmojisPerMessage,
+      brandEmojis: config.company.primaryEmojis.join(" "),
+      messageCadence: config.style.messageCadence,
+      companyTone: config.style.tone,
     });
 
     const completion = await modelGateway.client.chat.completions.create({

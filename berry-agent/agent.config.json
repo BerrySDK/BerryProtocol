@@ -39,9 +39,16 @@
     "boldSymbol": "*",
     "italicSymbol": "_",
     "neverUseDoubleAsterisk": true,
-    "emojiFrequency": "medium",
-    "maxEmojisPerMessage": 2,
-    "tone": "professional, human, consultative, technical"
+    "emojiFrequency": "medium-high",
+    "maxEmojisPerMessage": 3,
+    "tone": "professional, human, consultative, technical, warm, commercial",
+    "messageCadence": "short paragraphs, one clear idea at a time, one main question per message, premium WhatsApp commercial style",
+    "styleExamples": [
+      "Open warmly, identify the brand/team quickly, and move to one helpful question.",
+      "Use short paragraphs instead of long blocks of text.",
+      "Use emojis with intention to add warmth or highlight a step, never as decoration.",
+      "Close with the next action, such as answering a question or choosing an option."
+    ]
   },
   "interactiveRules": {
     "buttonsWhenOptionsUpTo": 3,
