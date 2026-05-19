@@ -29,6 +29,7 @@ export function createConversationMemory() {
         name: null,
         email: null,
         goal: null,
+        preferredLanguage: null,
       });
     }
 

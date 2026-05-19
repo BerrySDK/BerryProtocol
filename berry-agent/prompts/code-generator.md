@@ -17,6 +17,7 @@ Rules:
 - if exact public API is uncertain, add TODO comments instead of inventing
 - prefer clean, testable code
 - use the knowledge base context when available
+- keep comments and variable naming consistent with the user's language when reasonable
 
 Knowledge base context:
 

@@ -5,6 +5,7 @@ import { searchKnowledgeBase } from "./retrieval.js";
 import { wantsOnlineSearch, webSearch } from "./web-search.js";
 import { sanitizeFileName, shortId, wantsCode, ensureDir } from "./utils.js";
 import { sendButtons, sendFile, sendList, sendText } from "./sender.js";
+import { detectUserLanguage, formatLanguageLabel } from "./language.js";
 
 function safeJsonParse(raw, fallback) {
   try {
@@ -64,14 +65,18 @@ export function createAgentRuntime({
     });
 
     const leadSignals = extractLeadSignals(text, leadState);
-    if (leadSignals.name || leadSignals.email) {
-      memory.updateLeadState(userId, leadSignals);
-    }
+    const detectedLanguage = detectUserLanguage(text, leadState.preferredLanguage || "pt-BR");
+    memory.updateLeadState(userId, {
+      ...leadSignals,
+      preferredLanguage: detectedLanguage,
+    });
 
     const systemPrompt = await loadPrompt(paths, "system", {
       companyName: config.company.name,
       assistantName: config.company.assistantName,
       maxEmojisPerMessage: config.style.maxEmojisPerMessage,
+      brandEmojis: config.company.primaryEmojis.join(" "),
+      userLanguage: formatLanguageLabel(detectedLanguage),
       sourcesList: context.db.sources.length
         ? context.db.sources.map((source) => `- ${source}`).join("\n")
         : "- No local sources retrieved.",
@@ -104,6 +109,7 @@ export function createAgentRuntime({
 
   async function generateCodeFile({ userId, text, fileName }) {
     const history = memory.getHistory(userId);
+    const leadState = memory.getLeadState(userId);
     const db = await searchKnowledgeBase(paths, config, text, 8);
     const prompt = await loadPrompt(paths, "code-generator", {
       databaseContext: db.context || "No relevant local knowledge found.",
@@ -118,7 +124,9 @@ export function createAgentRuntime({
         ...history.slice(-8),
         {
           role: "user",
-          content: `Generate a practical BerryProtocol file for this request:\n${text}\n\nSuggested file name: ${fileName || "berry-example.js"}`,
+          content: `Generate a practical BerryProtocol file for this request.\nPreferred response language: ${formatLanguageLabel(
+            leadState.preferredLanguage || detectUserLanguage(text),
+          )}\n\nRequest:\n${text}\n\nSuggested file name: ${fileName || "berry-example.js"}`,
         },
       ],
     });
@@ -145,6 +153,7 @@ export function createAgentRuntime({
 
   async function answerWithContext({ userId, text, extraContext = "" }) {
     const history = memory.getHistory(userId);
+    const leadState = memory.getLeadState(userId);
     const db = await searchKnowledgeBase(paths, config, text, config.behavior.maxRetrievedChunks);
     const prompt = await loadPrompt(paths, "answer", {
       databaseContext: db.context || "No relevant local knowledge found.",
@@ -157,7 +166,12 @@ export function createAgentRuntime({
       messages: [
         { role: "system", content: prompt },
         ...history.slice(-config.behavior.historyWindow),
-        { role: "user", content: text },
+        {
+          role: "user",
+          content: `Preferred reply language: ${formatLanguageLabel(
+            leadState.preferredLanguage || detectUserLanguage(text),
+          )}\n\nUser message:\n${text}`,
+        },
       ],
     });
 
@@ -235,6 +249,11 @@ export function createAgentRuntime({
 
   async function handleInbound({ userId, chatId, text }) {
     const history = memory.getHistory(userId);
+    const leadState = memory.getLeadState(userId);
+    const detectedLanguage = detectUserLanguage(text, leadState.preferredLanguage || "pt-BR");
+    memory.updateLeadState(userId, {
+      preferredLanguage: detectedLanguage,
+    });
     memory.append(userId, "user", text);
 
     const action = wantsCode(text)

@@ -63,3 +63,6 @@ Rules:
 - if uncertain, prefer text over inventing structure
 - never invent BerryProtocol APIs
 - keep action payloads compact and valid
+- the `text` fields must stay in the user's language
+- use WhatsApp markdown in user-facing text when useful
+- use brand-aligned emojis only when they fit the company theme
