@@ -370,8 +370,27 @@ If BerryProtocol helps your project:
 
 ---
 
+# Contact
+
+Need help with BerryProtocol?
+
+### Email
+
+📧 **berrysdk@gmail.com**
+
+### Discord
+
+💬 **ferronatin**
+
+Feel free to contact us for support, bug reports, feature requests, or partnership inquiries.
+
+---
+
 # Disclaimer
 
 BerryProtocol is an independent engineering project for interoperability and automation purposes.
 
 It is not affiliated with or endorsed by WhatsApp.
+
+
+---
