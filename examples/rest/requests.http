@@ -1,0 +1,93 @@
+POST http://localhost:3000/instances
+Content-Type: application/json
+
+{
+  "sessionId": "store-001",
+  "authMethod": "link"
+}
+
+###
+
+GET http://localhost:3000/instances/store-001/link
+
+###
+
+POST http://localhost:3000/instances
+Content-Type: application/json
+
+{
+  "sessionId": "store-qr",
+  "authMethod": "qr"
+}
+
+###
+
+GET http://localhost:3000/instances/store-qr/qr
+
+###
+
+POST http://localhost:3000/instances
+Content-Type: application/json
+
+{
+  "sessionId": "store-code",
+  "authMethod": "pairing_code",
+  "phoneNumber": "5516999999999"
+}
+
+###
+
+GET http://localhost:3000/instances/store-code/pairing-code
+
+###
+
+POST http://localhost:3000/instances/store-001/send-text
+Content-Type: application/json
+
+{
+  "to": "5516999999999@s.whatsapp.net",
+  "text": "Olá pelo BerryProtocol!"
+}
+
+###
+
+POST http://localhost:3000/instances/store-001/send-image
+Content-Type: application/json
+
+{
+  "to": "5516999999999@s.whatsapp.net",
+  "media": {
+    "url": "https://example.com/banner.jpg",
+    "caption": "Banner BerryProtocol"
+  }
+}
+
+###
+
+POST http://localhost:3000/instances/store-001/send-list
+Content-Type: application/json
+
+{
+  "to": "5516999999999@s.whatsapp.net",
+  "list": {
+    "title": "Cardápio",
+    "text": "Escolha uma opção",
+    "buttonText": "Ver opções",
+    "sections": [
+      {
+        "title": "Lanches",
+        "rows": [
+          {
+            "id": "xburger",
+            "title": "X-Burger",
+            "description": "Pão, carne e queijo"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+###
+
+DELETE http://localhost:3000/instances/store-001/logout

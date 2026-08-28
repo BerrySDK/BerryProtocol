@@ -1,0 +1,31 @@
+{
+  "name": "berryotp",
+  "version": "0.1.9",
+  "description": "Facade package for BerryOTP so consumers can import it without the @berrysdk scope.",
+  "author": "Lipe Devv and Berry Protocol",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+    "dependencies": {
+        "@berrysdk/berry-otp": "^0.1.9"
+    },
+  "peerDependencies": {
+    "berryprotocol": "^0.1.9"
+  }
+}

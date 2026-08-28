@@ -1,0 +1,31 @@
+# Instances
+
+BerryAPI supports multiple WhatsApp sessions through named instances.
+
+## Main Endpoints
+
+- `POST /instance/create`
+- `GET /instance/fetch`
+- `GET /instance/connect/:instanceName`
+- `PUT /instance/restart/:instanceName`
+- `GET /instance/connectionState/:instanceName`
+- `DELETE /instance/logout/:instanceName`
+- `DELETE /instance/delete/:instanceName`
+
+## Create Example
+
+```json
+{
+  "instanceName": "store-01",
+  "authMethod": "qr"
+}
+```
+
+## Connection State
+
+When an instance needs login, the state payload may contain:
+
+- `qrCode`
+- `pairingCode`
+- `connectionState`
+- `status`

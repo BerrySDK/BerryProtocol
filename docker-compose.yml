@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  berryapi:
+    build:
+      context: .
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      API_KEY: berryapi_dev_key
+      DATABASE_URL: file:/data/berryapi.sqlite
+      BERRY_SQLITE_PATH: /data/berrysdk.db
+      BERRY_AUTH_FOLDER: /data/auth
+      BERRY_WS_PATH: /ws
+    ports:
+      - "3000:3000"
+    volumes:
+      - berry_data:/data
+
+volumes:
+  berry_data:

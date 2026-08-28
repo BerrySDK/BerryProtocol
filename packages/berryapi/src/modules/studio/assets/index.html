@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Berry Studio</title>
+    <link rel="stylesheet" href="/studio/assets/studio.css" />
+  </head>
+  <body>
+    <div class="studio-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <p class="eyebrow">BerryProtocol</p>
+          <h1>Berry Studio</h1>
+          <p class="subtitle">Flow builder, WhatsApp preview and simulator for the full Berry message surface.</p>
+        </div>
+
+        <section class="panel">
+          <h2>Access</h2>
+          <label class="field">
+            <span>API key</span>
+            <input id="api-key" type="password" placeholder="berryapi_dev_key" />
+          </label>
+          <div class="row-actions">
+            <button id="connect-button" class="button button-primary">Connect</button>
+            <button id="load-button" class="button button-secondary">Reload</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Flows</h2>
+            <button id="new-flow-button" class="button button-primary">New flow</button>
+          </div>
+          <div id="flow-list" class="flow-list"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Nodes</h2>
+            <span class="hint">Drag from here into the canvas</span>
+          </div>
+          <div id="node-palette" class="palette"></div>
+        </section>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Visual builder</p>
+            <h2 id="flow-title">No flow selected</h2>
+          </div>
+          <div class="row-actions">
+            <button id="save-flow-button" class="button button-secondary">Save draft</button>
+            <button id="publish-flow-button" class="button button-primary">Publish</button>
+            <button id="simulate-button" class="button button-accent">Run simulation</button>
+          </div>
+        </header>
+
+        <section class="workspace">
+          <div class="canvas-card">
+            <div class="canvas-toolbar">
+              <span>Canvas</span>
+              <button id="auto-layout-button" class="button button-ghost">Auto layout</button>
+            </div>
+            <div id="canvas" class="canvas" aria-label="Berry Studio flow canvas">
+              <svg id="edge-layer" class="edge-layer"></svg>
+            </div>
+          </div>
+
+          <div class="sidepanes">
+            <section class="panel inspector-panel">
+              <div class="panel-heading">
+                <h2>Inspector</h2>
+                <span class="hint" id="selected-node-label">Select a node</span>
+              </div>
+              <div id="inspector" class="inspector empty-state">Select a node to edit its behavior.</div>
+            </section>
+
+            <section class="panel preview-panel">
+              <div class="panel-heading">
+                <h2>WhatsApp Preview</h2>
+                <span class="hint">Rendered from the selected node</span>
+              </div>
+              <div class="phone-shell">
+                <div class="phone-topbar">
+                  <span class="avatar">B</span>
+                  <div>
+                    <strong>Berry Demo Chat</strong>
+                    <p>online</p>
+                  </div>
+                </div>
+                <div id="preview-chat" class="phone-chat"></div>
+              </div>
+            </section>
+
+            <section class="panel simulator-panel">
+              <div class="panel-heading">
+                <h2>Simulator</h2>
+                <span class="hint">Test the whole flow before using a real instance</span>
+              </div>
+              <div id="simulator-chat" class="simulator-chat empty-state">Run the simulation to see the transcript here.</div>
+              <div class="simulator-input-row">
+                <input id="simulator-input" type="text" placeholder="Type a user reply for input nodes" />
+                <button id="send-simulator-input" class="button button-primary">Send</button>
+              </div>
+              <div class="simulator-meta">
+                <div>
+                  <h3>Variables</h3>
+                  <pre id="variables-view">{}</pre>
+                </div>
+                <div>
+                  <h3>Logs</h3>
+                  <pre id="logs-view">[]</pre>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/studio/assets/studio.js"></script>
+  </body>
+  </html>

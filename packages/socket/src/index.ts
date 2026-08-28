@@ -1,0 +1,900 @@
+/**
+ * @module modulo
+ * @description Enhanced message sending capabilities including albums, cards,
+ * interactive buttons, and rich media support beyond standard WhatsApp messages.
+ * @license Apache-2.0
+ * @author Lipe Devv and Berry Protocol
+ */
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
+import makeWASocket, {
+  type AnyMessageContent,
+  type BinaryNode,
+  DisconnectReason,
+  downloadMediaMessage,
+  fetchLatestBerryWebVersion,
+  generateWAMessageFromContent,
+  makeCacheableSignalKeyStore,
+  prepareWAMessageMedia,
+  proto,
+  useMultiFileAuthState,
+  type WAMessage,
+  type WASocket,
+} from "@berrysdk/transport";
+import pino, { type Logger } from "pino";
+import {
+  type BerryAuthOptions,
+  type BerryEventBus,
+  type ButtonsPayload,
+  type CarouselCard,
+  type CarouselMessagePayload,
+  type ChatRecord,
+  type ContactRecord,
+  type GroupRecord,
+  type IncomingMessage,
+  type InteractivePayload,
+  type ListPayload,
+  type MessageAck,
+  type PresenceRecord,
+  type SyncBundle,
+} from "@berrysdk/events";
+import {
+  ackFromWebMessageStatus,
+  buttonsPayloadToLegacyButtonsMessageContent,
+  buttonsPayloadToNativeFlowInteractiveContent,
+  carouselButtonToNativeFlowButton,
+  carouselPayloadToMessageContent,
+  interactivePayloadToMessageContent,
+  interactiveNativeFlowAdditionalNodes,
+  listToInteractiveMessageContent,
+  normalizeIncomingMessage,
+} from "@berrysdk/wa-message";
+
+export interface SocketOptions {
+  sessionId: string;
+  logger?: Logger;
+  reconnectMaxAttempts?: number;
+  reconnectDelayMs?: number;
+  authFolder?: string;
+  auth?: BerryAuthOptions;
+}
+
+type MessageContent = Record<string, unknown>;
+const shouldDebugOutgoingMessages = process.env.BERRY_DEBUG_WA_MESSAGE === "1";
+const MAX_CAROUSEL_CARDS = 10;
+const BIZ_BOT_SUPPORT_PAYLOAD = "{}";
+
+const debugJsonReplacer = (_key: string, value: unknown) => {
+  if (Buffer.isBuffer(value)) {
+    return `<Buffer ${value.length} bytes>`;
+  }
+
+  if (value instanceof Uint8Array) {
+    return `<Uint8Array ${value.length} bytes>`;
+  }
+
+  return value;
+};
+
+const normalizePhoneNumber = (value: string): string => value.replace(/\D/g, "");
+
+const assertTransportJid = (jid: string): string => {
+  const normalized = jid.trim();
+  if (!normalized || !normalized.includes("@")) {
+    throw new Error(
+      `Invalid WhatsApp JID "${jid}". BerryProtocol expected something like "5511999999999@s.whatsapp.net".`,
+    );
+  }
+
+  return normalized;
+};
+
+const isPrivateChatJid = (jid: string): boolean =>
+  jid.endsWith("@s.whatsapp.net") || jid.endsWith("@lid");
+
+const aiLabelAdditionalNode = (): BinaryNode => ({
+  tag: "bot",
+  attrs: {
+    biz_bot: "1",
+  },
+  content: undefined,
+});
+
+const generateNumericPairingCode = (): string =>
+  Math.floor(10_000_000 + Math.random() * 90_000_000).toString();
+
+const getStatusCode = (error: unknown): number | undefined => {
+  if (!error || typeof error !== "object") {
+    return undefined;
+  }
+
+  const candidate = error as {
+    output?: { statusCode?: number };
+    data?: { attrs?: { code?: string | number } };
+    message?: string;
+  };
+
+  const directCode = candidate.output?.statusCode;
+  if (typeof directCode === "number") {
+    return directCode;
+  }
+
+  const streamCode = candidate.data?.attrs?.code;
+  if (typeof streamCode === "number") {
+    return streamCode;
+  }
+
+  if (typeof streamCode === "string" && /^\d+$/.test(streamCode)) {
+    return Number(streamCode);
+  }
+
+  if (typeof candidate.message === "string") {
+    if (candidate.message.toLowerCase().includes("restart required")) {
+      return DisconnectReason.restartRequired;
+    }
+
+    const match = candidate.message.match(/\b(401|408|411|428|440|500|503|515)\b/);
+    if (match) {
+      return Number(match[1]);
+    }
+  }
+
+  return undefined;
+};
+
+const toChatRecord = (chat: Record<string, unknown>): ChatRecord => ({
+  id: String(chat.id ?? ""),
+  name: typeof chat.name === "string" ? chat.name : undefined,
+  unreadCount: typeof chat.unreadCount === "number" ? chat.unreadCount : undefined,
+  lastMessageAt:
+    typeof chat.conversationTimestamp === "number"
+      ? new Date(chat.conversationTimestamp * 1000).toISOString()
+      : undefined,
+});
+
+const toContactRecord = (contact: Record<string, unknown>): ContactRecord => ({
+  id: String(contact.id ?? ""),
+  name: typeof contact.name === "string" ? contact.name : undefined,
+  pushName: typeof contact.notify === "string" ? contact.notify : undefined,
+  shortName: typeof contact.verifiedName === "string" ? contact.verifiedName : undefined,
+});
+
+const toGroupRecord = (group: Record<string, unknown>): GroupRecord => ({
+  id: String(group.id ?? ""),
+  subject: String(group.subject ?? ""),
+  participants: Array.isArray(group.participants)
+    ? group.participants
+        .map((participant) =>
+          typeof participant === "object" && participant && "id" in participant
+            ? String((participant as { id?: string }).id ?? "")
+            : "",
+        )
+        .filter(Boolean)
+    : [],
+});
+
+export class BerrySocket {
+  private readonly logger: Logger;
+  private reconnectAttempts = 0;
+  private reconnectTimer?: NodeJS.Timeout;
+  private manualClose = false;
+  private connected = false;
+  private sock?: WASocket;
+  private connectPromise?: Promise<void>;
+  private authFolder?: string;
+  private auth: BerryAuthOptions;
+  private pairingCodeRequested = false;
+  private readonly retryCounterMap = new Map<string, unknown>();
+  private readonly msgRetryCounterCache = {
+    get: <T>(key: string) => this.retryCounterMap.get(key) as T | undefined,
+    set: <T>(key: string, value: T) => {
+      this.retryCounterMap.set(key, value);
+      return true;
+    },
+    del: (key: string) => this.retryCounterMap.delete(key),
+    flushAll: () => this.retryCounterMap.clear(),
+  };
+  private readonly sentMessages = new Map<string, WAMessage>();
+
+  constructor(
+    private readonly options: SocketOptions,
+    private readonly bus: BerryEventBus,
+  ) {
+    this.logger = options.logger ?? pino({ name: "berry-socket" });
+    this.auth = options.auth ?? { method: "link" };
+  }
+
+  setAuth(auth: BerryAuthOptions): void {
+    const method = auth.method ?? "link";
+    const customPairingCode =
+      method === "pairing_code"
+        ? this.resolvePairingCode(auth.customPairingCode)
+        : auth.customPairingCode;
+
+    this.auth = {
+      method,
+      phoneNumber: auth.phoneNumber ? normalizePhoneNumber(auth.phoneNumber) : undefined,
+      customPairingCode,
+    };
+    this.pairingCodeRequested = false;
+  }
+
+  async connect(auth?: BerryAuthOptions): Promise<void> {
+    if (auth) {
+      this.setAuth(auth);
+    }
+
+    if (this.connectPromise) {
+      return this.connectPromise;
+    }
+
+    this.manualClose = false;
+    this.pairingCodeRequested = false;
+    this.connectPromise = this.connectUntilReady();
+    return this.connectPromise.finally(() => {
+      this.connectPromise = undefined;
+    });
+  }
+
+  async disconnect(reason = "manual"): Promise<void> {
+    this.manualClose = true;
+    clearTimeout(this.reconnectTimer);
+    this.connected = false;
+    this.sock?.end(new Error(reason));
+    this.sock?.ws.close();
+    this.sock = undefined;
+  }
+
+  async reconnect(): Promise<void> {
+    await this.disconnect("reconnect");
+    await this.connect();
+  }
+
+  async logout(): Promise<void> {
+    this.manualClose = true;
+    clearTimeout(this.reconnectTimer);
+    this.connected = false;
+    await this.sock?.logout();
+    this.sock = undefined;
+  }
+
+  isConnected(): boolean {
+    return this.connected && Boolean(this.sock?.user?.id);
+  }
+
+  async sendMessage(
+    to: string,
+    content: MessageContent,
+    options?: Record<string, unknown>,
+  ): Promise<WAMessage> {
+    if (!this.sock) {
+      throw new Error("Socket is not connected.");
+    }
+
+    const result = await this.sock.sendMessage(to, content as never, options as never);
+    if (!result) {
+      throw new Error("WhatsApp did not return a message receipt for the send operation.");
+    }
+
+    if (result.key.id) {
+      this.sentMessages.set(result.key.id, result);
+    }
+
+    return result;
+  }
+
+  async sendTransportMessage(
+    to: string,
+    content: AnyMessageContent,
+    options?: Record<string, unknown>,
+  ): Promise<WAMessage> {
+    return this.sendMessage(assertTransportJid(to), content as MessageContent, options);
+  }
+
+  async editMessage(to: string, messageId: string, text: string): Promise<WAMessage> {
+    const recipientJid = assertTransportJid(to);
+    return this.sendTransportMessage(recipientJid, {
+      text,
+      edit: {
+        remoteJid: recipientJid,
+        fromMe: true,
+        id: messageId,
+      },
+    });
+  }
+
+  async sendLegacyButtonsMessage(to: string, buttons: ButtonsPayload): Promise<WAMessage> {
+    if (!this.sock?.user?.id) {
+      throw new Error("Socket is not connected.");
+    }
+
+    const recipientJid = assertTransportJid(to);
+    const content = buttonsPayloadToLegacyButtonsMessageContent(buttons);
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
+      userJid: this.sock.user.id,
+    });
+    this.logOutgoingMessage("buttons-legacy", fullMessage);
+
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
+      messageId: fullMessage.key.id!,
+    });
+
+    return fullMessage as WAMessage;
+  }
+
+  async sendInteractiveMessage(to: string, interactive: InteractivePayload): Promise<WAMessage> {
+    if (!this.sock?.user?.id) {
+      throw new Error("Socket is not connected.");
+    }
+
+    const recipientJid = assertTransportJid(to);
+    const content = interactivePayloadToMessageContent(interactive);
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
+      userJid: this.sock.user.id,
+    });
+    this.logOutgoingMessage("interactive", fullMessage);
+
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
+      messageId: fullMessage.key.id!,
+      additionalNodes: interactiveNativeFlowAdditionalNodes(),
+    });
+
+    return fullMessage as WAMessage;
+  }
+
+  async sendReplyButtonsMessage(to: string, buttons: ButtonsPayload): Promise<WAMessage> {
+    if (!this.sock?.user?.id) {
+      throw new Error("Socket is not connected.");
+    }
+
+    const recipientJid = assertTransportJid(to);
+    const content = buttonsPayloadToNativeFlowInteractiveContent(buttons);
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
+      userJid: this.sock.user.id,
+    });
+    this.logOutgoingMessage("buttons", fullMessage);
+
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
+      messageId: fullMessage.key.id!,
+      additionalNodes: interactiveNativeFlowAdditionalNodes(),
+    });
+
+    return fullMessage as WAMessage;
+  }
+
+  async sendListMessage(to: string, list: ListPayload): Promise<WAMessage> {
+    if (!this.sock?.user?.id) {
+      throw new Error("Socket is not connected.");
+    }
+
+    const recipientJid = assertTransportJid(to);
+    const content = listToInteractiveMessageContent(list);
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
+      userJid: this.sock.user.id,
+    });
+    this.logOutgoingMessage("list", fullMessage);
+
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
+      messageId: fullMessage.key.id!,
+    });
+
+    return fullMessage as WAMessage;
+  }
+
+  async sendCarouselMessage(
+    to: string,
+    payload: CarouselMessagePayload,
+    options?: { ai?: boolean },
+  ): Promise<WAMessage> {
+    if (!this.sock?.user?.id) {
+      throw new Error("Socket is not connected.");
+    }
+
+    const recipientJid = assertTransportJid(to);
+    const cards = payload.cards ?? [];
+
+    if (!cards.length) {
+      throw new Error("Carousel payload requires at least one card.");
+    }
+
+    if (cards.length > MAX_CAROUSEL_CARDS) {
+      throw new Error(`Carousel payload supports at most ${MAX_CAROUSEL_CARDS} cards.`);
+    }
+
+    this.assertCarouselCardType(payload);
+
+    const preparedCards = await Promise.all(cards.map((card, index) => this.prepareCarouselCard(card, index)));
+    const content = carouselPayloadToMessageContent({
+      text: payload.text,
+      footer: payload.footer,
+      cards: preparedCards,
+    });
+    const fullMessage = generateWAMessageFromContent(recipientJid, content, {
+      userJid: this.sock.user.id,
+    });
+
+    if (options?.ai) {
+      this.applyAiLabelToCarouselMessage(recipientJid, fullMessage);
+    }
+
+    this.logOutgoingMessage("carousel", fullMessage);
+
+    const additionalNodes: BinaryNode[] = [];
+    if (preparedCards.some((card) => !!card.nativeFlowMessage?.buttons?.length)) {
+      additionalNodes.push(...interactiveNativeFlowAdditionalNodes());
+    }
+
+    if (options?.ai) {
+      additionalNodes.push(aiLabelAdditionalNode());
+    }
+
+    await this.sock.relayMessage(recipientJid, fullMessage.message!, {
+      messageId: fullMessage.key.id!,
+      ...(additionalNodes.length ? { additionalNodes } : {}),
+    });
+
+    return fullMessage as WAMessage;
+  }
+
+  async subscribePresence(jid: string): Promise<void> {
+    if (!this.sock) {
+      throw new Error("Socket is not connected.");
+    }
+
+    await this.sock.presenceSubscribe(jid);
+  }
+
+  async sendPresenceUpdate(
+    status: "available" | "composing" | "recording" | "paused" | "unavailable",
+    jid?: string,
+  ): Promise<void> {
+    if (!this.sock) {
+      throw new Error("Socket is not connected.");
+    }
+
+    await this.sock.sendPresenceUpdate(status, jid);
+  }
+
+  async fetchGroups(): Promise<GroupRecord[]> {
+    if (!this.sock) {
+      throw new Error("Socket is not connected.");
+    }
+
+    const groups = await this.sock.groupFetchAllParticipating();
+    return Object.values(groups).map((group) =>
+      toGroupRecord(group as unknown as Record<string, unknown>),
+    );
+  }
+
+  async downloadMedia(message: WAMessage): Promise<Buffer> {
+    const data = await downloadMediaMessage(message, "buffer", {});
+    return Buffer.isBuffer(data) ? data : Buffer.from(data);
+  }
+
+  private async connectUntilReady(): Promise<void> {
+    while (true) {
+      const outcome = await this.createSocketAndWaitUntilOpen();
+      if (outcome === "open") {
+        return;
+      }
+
+      if (outcome === "restart_required") {
+        this.bus.emit("connection.reconnecting", {
+          sessionId: this.options.sessionId,
+          attempt: this.reconnectAttempts + 1,
+          delayMs: 0,
+        });
+        this.sock = undefined;
+        continue;
+      }
+
+      return;
+    }
+  }
+
+  private assertCarouselCardType(payload: CarouselMessagePayload): void {
+    if (!payload.carouselCardType || payload.carouselCardType === "mixed") {
+      return;
+    }
+
+    for (const [index, card] of payload.cards.entries()) {
+      if (payload.carouselCardType === "image" && card.video) {
+        throw new Error(`Carousel card ${index + 1} contains video but carouselCardType is "image".`);
+      }
+
+      if (payload.carouselCardType === "video" && card.image) {
+        throw new Error(`Carousel card ${index + 1} contains image but carouselCardType is "video".`);
+      }
+    }
+  }
+
+  private applyAiLabelToCarouselMessage(jid: string, message: WAMessage): void {
+    if (!isPrivateChatJid(jid)) {
+      throw new Error("AI labeled carousel messages are only allowed in private chat.");
+    }
+
+    const viewOnceMessage = message.message?.viewOnceMessage;
+    const innerMessage = viewOnceMessage?.message;
+    if (!innerMessage) {
+      throw new Error("BerryProtocol expected a viewOnceMessage wrapper for carousel AI label injection.");
+    }
+
+    innerMessage.messageContextInfo ||= {};
+    innerMessage.messageContextInfo.supportPayload = BIZ_BOT_SUPPORT_PAYLOAD;
+  }
+
+  private async prepareCarouselCard(
+    card: CarouselCard,
+    index: number,
+  ): Promise<proto.Message.IInteractiveMessage> {
+    const hasImage = !!card.image;
+    const hasVideo = !!card.video;
+
+    if (!hasImage && !hasVideo) {
+      throw new Error(`Carousel card ${index + 1} must contain image or video.`);
+    }
+
+    if (hasImage && hasVideo) {
+      throw new Error(`Carousel card ${index + 1} cannot contain both image and video.`);
+    }
+
+    const header: {
+      title?: string;
+      hasMediaAttachment: boolean;
+      imageMessage?: proto.Message.IImageMessage;
+      videoMessage?: proto.Message.IVideoMessage;
+    } = {
+      title: card.title ?? "",
+      hasMediaAttachment: true,
+    };
+
+    if (card.image) {
+      const media = await prepareWAMessageMedia(
+        this.toCarouselImageMediaMessage(card.image),
+        {
+          upload: this.sock!.waUploadToServer,
+          logger: this.logger,
+        },
+      );
+      header.imageMessage = media.imageMessage ?? undefined;
+    } else if (card.video) {
+      const media = await prepareWAMessageMedia(
+        this.toCarouselVideoMediaMessage(card.video),
+        {
+          upload: this.sock!.waUploadToServer,
+          logger: this.logger,
+        },
+      );
+      header.videoMessage = media.videoMessage ?? undefined;
+    }
+
+    return {
+      header,
+      body: card.body
+        ? {
+            text: card.body,
+          }
+        : undefined,
+      footer: card.footer
+        ? {
+            text: card.footer,
+          }
+        : undefined,
+      nativeFlowMessage:
+        card.buttons && card.buttons.length > 0
+          ? {
+              buttons: card.buttons.map((button, buttonIndex) =>
+                carouselButtonToNativeFlowButton(button, buttonIndex),
+              ),
+              messageParamsJson: "",
+              messageVersion: 1,
+            }
+          : undefined,
+    };
+  }
+
+  private toCarouselImageMediaMessage(media: NonNullable<CarouselCard["image"]>) {
+    const source = media.buffer ?? (media.url ? { url: media.url } : undefined);
+    if (!source) {
+      throw new Error("Carousel image media must provide buffer or url before reaching the socket layer.");
+    }
+
+    return {
+      image: source,
+      ...(media.mimetype ? { mimetype: media.mimetype } : {}),
+      ...(media.fileName ? { fileName: media.fileName } : {}),
+    };
+  }
+
+  private toCarouselVideoMediaMessage(media: NonNullable<CarouselCard["video"]>) {
+    const source = media.buffer ?? (media.url ? { url: media.url } : undefined);
+    if (!source) {
+      throw new Error("Carousel video media must provide buffer or url before reaching the socket layer.");
+    }
+
+    return {
+      video: source,
+      ...(media.mimetype ? { mimetype: media.mimetype } : {}),
+      ...(media.fileName ? { fileName: media.fileName } : {}),
+    };
+  }
+
+  private async createSocketAndWaitUntilOpen(): Promise<"open" | "restart_required"> {
+    const sessionDir = await this.ensureAuthDir();
+    const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+    const { version } = await fetchLatestBerryWebVersion();
+
+    return new Promise<"open" | "restart_required">((resolve, reject) => {
+      const sock = makeWASocket({
+        version,
+        logger: this.logger,
+        auth: {
+          creds: state.creds,
+          keys: makeCacheableSignalKeyStore(state.keys, this.logger),
+        },
+        printQRInTerminal: false,
+        syncFullHistory: true,
+        markOnlineOnConnect: false,
+        emitOwnEvents: true,
+        msgRetryCounterCache: this.msgRetryCounterCache,
+        getMessage: async (key) => {
+          if (!key.id) {
+            return undefined;
+          }
+
+          return this.sentMessages.get(key.id)?.message ?? undefined;
+        },
+      });
+
+      this.sock = sock;
+
+      sock.ev.on("creds.update", () => {
+        void saveCreds();
+      });
+
+      sock.ev.on("connection.update", (update) => {
+        if (update.qr) {
+          this.bus.emit("qr", update.qr);
+          this.bus.emit("auth.link", {
+            sessionId: this.options.sessionId,
+            value: update.qr,
+          });
+          this.bus.emit("auth.qr", {
+            sessionId: this.options.sessionId,
+            value: update.qr,
+          });
+          void this.maybeRequestPairingCode(sock);
+        }
+
+        if (update.connection === "open") {
+          this.connected = true;
+          this.reconnectAttempts = 0;
+          this.bus.emit("connection.open", {
+            sessionId: this.options.sessionId,
+            connectedAt: new Date().toISOString(),
+          });
+          resolve("open");
+          return;
+        }
+
+        if (update.connection === "close") {
+          this.connected = false;
+          const statusCode = getStatusCode(update.lastDisconnect?.error);
+          const reason =
+            statusCode === DisconnectReason.loggedOut
+              ? "logged_out"
+              : statusCode === DisconnectReason.restartRequired
+                ? "restart_required"
+                : "connection_closed";
+
+          this.bus.emit("connection.close", {
+            sessionId: this.options.sessionId,
+            disconnectedAt: new Date().toISOString(),
+            reason,
+          });
+
+          if (statusCode === DisconnectReason.loggedOut) {
+            reject(new Error("WhatsApp session logged out."));
+            return;
+          }
+
+          if (statusCode === DisconnectReason.restartRequired) {
+            resolve("restart_required");
+            return;
+          }
+
+          if (!this.manualClose) {
+            this.scheduleReconnect();
+          }
+        }
+      });
+
+      sock.ev.on("messages.upsert", ({ messages, type }) => {
+        for (const message of messages) {
+          const normalized = normalizeIncomingMessage(message);
+          if (!normalized) {
+            continue;
+          }
+
+          if (!message.key.fromMe && type === "notify") {
+            this.bus.emit("message.received", normalized);
+          }
+        }
+      });
+
+      sock.ev.on("messages.update", (updates) => {
+        for (const item of updates) {
+          const ack: MessageAck = {
+            messageId: item.key.id ?? "",
+            remoteJid: item.key.remoteJid ?? "",
+            ack: ackFromWebMessageStatus(item.update.status),
+            updatedAt: new Date().toISOString(),
+          };
+          this.bus.emit("message.ack", ack);
+        }
+      });
+
+      sock.ev.on("message-receipt.update", (receipts) => {
+        for (const receipt of receipts) {
+          this.bus.emit("message.ack", {
+            messageId: receipt.key.id ?? "",
+            remoteJid: receipt.key.remoteJid ?? "",
+            ack: receipt.receipt.readTimestamp ? "read" : "delivered",
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      });
+
+      sock.ev.on("presence.update", ({ id, presences }) => {
+        for (const presence of Object.values(presences)) {
+          const payload: PresenceRecord = {
+            id,
+            status: (presence.lastKnownPresence as PresenceRecord["status"]) ?? "available",
+            lastSeenAt:
+              typeof presence.lastSeen === "number"
+                ? new Date(presence.lastSeen * 1000).toISOString()
+                : undefined,
+          };
+          this.bus.emit("presence.update", payload);
+        }
+      });
+
+      sock.ev.on("chats.update", (chats) => {
+        this.bus.emit(
+          "chats.update",
+          chats.map((chat) => toChatRecord(chat as unknown as Record<string, unknown>)),
+        );
+      });
+
+      sock.ev.on("contacts.upsert", (contacts) => {
+        this.bus.emit(
+          "sync.contacts",
+          contacts.map((contact) => toContactRecord(contact as unknown as Record<string, unknown>)),
+        );
+      });
+
+      sock.ev.on("groups.upsert", (groups) => {
+        this.bus.emit(
+          "sync.groups",
+          groups.map((group) => toGroupRecord(group as unknown as Record<string, unknown>)),
+        );
+      });
+
+      sock.ev.on("messaging-history.set", ({ chats, contacts, messages }) => {
+        const incomingMessages = messages
+          .map((message) => normalizeIncomingMessage(message))
+          .filter((message): message is IncomingMessage => !!message);
+
+        const payload: SyncBundle = {
+          contacts: contacts.map((contact) =>
+            toContactRecord(contact as unknown as Record<string, unknown>),
+          ),
+          chats: chats.map((chat) => toChatRecord(chat as unknown as Record<string, unknown>)),
+          groups: [],
+          messages: incomingMessages,
+        };
+
+        this.bus.emit("sync.history", payload);
+        this.bus.emit("sync.messages", incomingMessages);
+      });
+    });
+  }
+
+  private scheduleReconnect(): void {
+    const maxAttempts = this.options.reconnectMaxAttempts ?? 10;
+    if (this.reconnectAttempts >= maxAttempts) {
+      return;
+    }
+
+    this.reconnectAttempts += 1;
+    const delayMs = (this.options.reconnectDelayMs ?? 3_000) * this.reconnectAttempts;
+    this.bus.emit("connection.reconnecting", {
+      sessionId: this.options.sessionId,
+      attempt: this.reconnectAttempts,
+      delayMs,
+    });
+
+    this.reconnectTimer = setTimeout(() => {
+      void this.connect().catch((error) => {
+        this.bus.emit("protocol.error", {
+          sessionId: this.options.sessionId,
+          error: (error as Error).message,
+        });
+      });
+    }, delayMs);
+  }
+
+  private async ensureAuthDir(): Promise<string> {
+    const baseFolder = this.options.authFolder ?? join(process.cwd(), ".berry-sessions");
+    const sessionDir = join(baseFolder, this.options.sessionId);
+    await mkdir(sessionDir, { recursive: true });
+    this.authFolder = sessionDir;
+    return sessionDir;
+  }
+
+  private async maybeRequestPairingCode(sock: WASocket): Promise<void> {
+    if (this.auth.method !== "pairing_code") {
+      return;
+    }
+
+    if (this.pairingCodeRequested || sock.authState.creds.registered) {
+      return;
+    }
+
+    if (!this.auth.phoneNumber) {
+      this.bus.emit("protocol.error", {
+        sessionId: this.options.sessionId,
+        error: "phoneNumber is required for pairing_code authentication.",
+      });
+      return;
+    }
+
+    this.pairingCodeRequested = true;
+
+    try {
+      const code = await sock.requestPairingCode(
+        this.auth.phoneNumber,
+        this.auth.customPairingCode,
+      );
+      this.bus.emit("auth.pairing_code", {
+        sessionId: this.options.sessionId,
+        phoneNumber: this.auth.phoneNumber,
+        code,
+      });
+    } catch (error) {
+      this.pairingCodeRequested = false;
+      this.bus.emit("protocol.error", {
+        sessionId: this.options.sessionId,
+        error: `Unable to request pairing code: ${(error as Error).message}`,
+      });
+    }
+  }
+
+  private resolvePairingCode(customPairingCode?: string): string {
+    if (!customPairingCode) {
+      return generateNumericPairingCode();
+    }
+
+    const normalized = customPairingCode.replace(/\D/g, "");
+    if (!/^\d{8}$/.test(normalized)) {
+      throw new Error("Pairing code must be exactly 8 numeric digits.");
+    }
+
+    return normalized;
+  }
+
+  private logOutgoingMessage(kind: string, message: WAMessage): void {
+    if (!shouldDebugOutgoingMessages) {
+      return;
+    }
+
+    this.logger.info(
+      {
+        kind,
+        key: message.key,
+        message: JSON.parse(JSON.stringify(message.message, debugJsonReplacer)),
+      },
+      "berry outgoing message",
+    );
+  }
+}

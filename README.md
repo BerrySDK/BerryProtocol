@@ -1,396 +1,230 @@
-<p align="center">
-  <img src=".github/assets/banner.png" alt="BerryProtocol" />
-</p>
-
-<h1 align="center">BerryProtocol</h1>
-
-<p align="center">
-  Native WhatsApp interactive messaging SDK for TypeScript.
-</p>
-
-<p align="center">
-  Build modern WhatsApp experiences with native lists, buttons, carousels,
-  OTP flows, realtime events, and multi-session automation.
-</p>
-
-<p align="center">
-  <a href="https://www.npmjs.com/package/berryprotocol">
-    <img alt="npm version" src="https://img.shields.io/npm/v/berryprotocol?color=7C3AED" />
-  </a>
-
-  <a href="https://www.npmjs.com/package/berryprotocol">
-    <img alt="npm downloads" src="https://img.shields.io/npm/dm/berryprotocol?color=A855F7" />
-  </a>
-
-  <a href="https://github.com/BerrySDK/BerryProtocol">
-    <img alt="github repo" src="https://img.shields.io/badge/github-BerrySDK%2FBerryProtocol-18181B?logo=github&logoColor=white" />
-  </a>
-
-  <img alt="node version" src="https://img.shields.io/badge/node-%3E%3D20.0.0-22C55E" />
-
-  <img alt="typescript" src="https://img.shields.io/badge/language-TypeScript-3178C6" />
-
-  <img alt="focus" src="https://img.shields.io/badge/focus-interactive%20messaging%20%2B%20automation-9333EA" />
-</p>
-
----
-
-## Why BerryProtocol
-
-BerryProtocol is a modern developer-first SDK built for creating rich WhatsApp experiences using TypeScript.
-
-Instead of focusing only on low-level protocol internals, BerryProtocol focuses on:
-
-- interactive messaging
-- realtime communication
-- multi-session scalability
-- developer experience
-- automation workflows
-- clean npm integration
-
-The project is part of the BerrySDK ecosystem and powers modern WhatsApp automation flows with a simple and scalable API.
-
----
-
-# Features
-
-## Native Interactive Messages
-
-BerryProtocol includes native support for:
-
-- Lists
-- Reply Buttons
-- CTA Buttons
-- Copy Buttons
-- OTP Messages
-- Carousels
-- Polls
-- Reactions
-- Presence
-- Rich Media
-- Realtime Events
-
----
-
-## Multi-Session Architecture
-
-Designed for scalable applications.
-
-- Multiple WhatsApp sessions
-- Independent auth states
-- QR authentication
-- Pairing code flows
-- Session recovery
-- Automatic reconnects
-
-Perfect for:
-
-- SaaS platforms
-- automation systems
-- support tools
-- chatbot platforms
-- WhatsApp integrations
-- API services
-
----
-
-## Developer Experience
-
-BerryProtocol was designed to feel simple, modern, and production-ready.
-
-### Highlights
-
-- TypeScript-first API
-- ESM-first package
-- clean public exports
-- grouped SDK modules
-- strongly typed events
-- lightweight integration flow
-- npm-first distribution
-
----
-
-# Installation
-
-```bash
-npm install berryprotocol
-````
-
----
-
-# Quick Start
-
-```ts
-import BerryProtocol, { makeLogger } from "berryprotocol";
-
-const client = new BerryProtocol({
-  sessionId: "default",
-  logger: makeLogger(),
-  reconnectDelayMs: 1500,
-  reconnectMaxAttempts: 12,
-  printQrInTerminal: true,
-});
-
-client.on("auth.qr", ({ value }) => {
-  console.log("qr", value);
-});
-
-client.on("connection.open", () => {
-  console.log("connected");
-});
-
-client.on("message.received", (message) => {
-  console.log("incoming", {
-    from: message.from,
-    type: message.type,
-  });
-});
-
-await client.connectWithQr();
-```
-
----
-
-# Interactive Message Examples
-
-## Reply Buttons
-
-```ts
-await client.sendButtons(chatId, {
-  text: "Choose an option",
-  buttons: [
-    {
-      id: "buy",
-      text: "Buy now",
-    },
-    {
-      id: "support",
-      text: "Support",
-    },
-  ],
-});
-```
-
----
-
-## Lists
-
-```ts
-await client.sendList(chatId, {
-  title: "Menu",
-  buttonText: "Open",
-  sections: [
-    {
-      title: "Pizzas",
-      rows: [
-        {
-          id: "calabresa",
-          title: "Pizza Calabresa",
-        },
-      ],
-    },
-  ],
-});
-```
-
----
-
-## Copy Buttons
-
-```ts
-await client.sendCopyButton(chatId, {
-  text: "Your verification code",
-  code: "458921",
-});
-```
-
----
-
-## Carousel Messages
-
-```ts
-await client.sendCarousel(chatId, {
-  text: "Featured products",
-  cards: [
-    {
-      title: "Berry Burger",
-      body: "Special burger",
-      footer: "BerryProtocol",
-    },
-  ],
-});
-```
-
----
-
-# Realtime Events
-
-BerryProtocol exposes typed realtime events for modern automation systems.
-
-```ts
-client.on("message.received", console.log);
-
-client.on("message.updated", console.log);
-
-client.on("message.reaction", console.log);
-
-client.on("presence.update", console.log);
-
-client.on("connection.update", console.log);
-```
-
----
-
-# Media Support
-
-Supported media flows include:
-
-* images
-* videos
-* audio
-* voice notes
-* stickers
-* documents
-* GIFs
-
-Example:
-
-```ts
-await client.sendImage(chatId, {
-  url: "./image.png",
-  caption: "BerryProtocol",
-});
-```
-
----
-
-# Ecosystem
-
-BerryProtocol is part of the BerrySDK ecosystem.
-
-## Packages
-
-* `berryprotocol`
-* `berryotp`
-* `berryapi`
-
-## Future Tools
-
-* BerryStudio
-* visual message builder
-* realtime flow editor
-* webhook inspector
-* automation designer
-
----
-
-# Repository Structure
-
-```txt
+# BerryAPI
+
+BerryAPI is a REST API and realtime platform for WhatsApp Web automation built by BerrySDK on top of BerryProtocol.
+
+It is designed for:
+- automation tools like `n8n`
+- chat builders like `Typebot`
+- internal SaaS panels
+- webhook-first WhatsApp integrations
+
+BerryAPI ships with:
+- multi-instance session management
+- API key authentication
+- Swagger/OpenAPI docs at `/docs`
+- realtime event streaming over WebSocket
+- webhook dispatch per instance
+- modern WhatsApp message endpoints
+- SQLite by default, prepared for future PostgreSQL migration
+
+## Stack
+
+- Node.js
+- TypeScript
+- Fastify
+- Drizzle ORM
+- better-sqlite3
+- Zod
+- Pino
+- Swagger/OpenAPI
+- WebSocket
+
+## Project Structure
+
+```text
 src/
- ├── Auth/
- ├── Defaults/
- ├── Media/
- ├── Messages/
- ├── Socket/
- ├── Store/
- ├── Types/
- ├── Utils/
- └── index.ts
+  app.ts
+  server.ts
+  config/
+  database/
+  docs/
+  managers/
+  middlewares/
+  modules/
+    chat/
+    group/
+    instance/
+    message/
+    profile/
+    settings/
+    webhook/
+  providers/
+    whatsapp/
+  realtime/
+  types/
+  utils/
+  webhook/
 ```
 
----
-
-# Requirements
-
-* Node.js >= 20
-* npm
-
----
-
-# Useful Scripts
+## Install
 
 ```bash
-npm run build
-npm run clean
-npm run prepublishOnly
+npm install
 ```
 
----
-
-# Versioning
-
-BerryProtocol uses manual semantic versioning.
-
-Recommended release flow:
+## Run In Development
 
 ```bash
-npm version patch
-git push origin main --follow-tags
+cp .env.example .env
+npm run dev
 ```
 
----
+BerryAPI starts on:
 
-# Contributing
+- `GET http://localhost:3000`
+- `GET http://localhost:3000/info`
+- `GET http://localhost:3000/docs`
+- `GET http://localhost:3000/studio`
 
-Before opening a PR:
+## Berry Studio
 
-* run `npm install`
-* run `npm run build`
-* keep typings stable
-* avoid breaking public exports
-* keep documentation updated
-* validate interactive message flows
+Berry Studio is the shadcn/ui dashboard bundled with BerryAPI. It includes:
 
----
+- visual flow editing with React Flow
+- draft saving, validation and publishing
+- automatic WhatsApp triggers by instance and keyword
+- automatic continuation when a contact replies to a waiting flow
+- simulation without sending messages
+- real execution through a connected BerryProtocol instance
+- QR code and pairing-code connection management
+- nested `{{variable}}` interpolation in buttons, lists, carousels and JSON payloads
+- analytics, run logs and stored flow versions
+- all 34 message capabilities currently exposed by BerryAPI
 
-# Roadmap
+Build the frontend before starting the production API:
 
-* Native Flow Messages
-* WhatsApp Forms
-* Advanced Carousel Builder
-* Better Media Pipeline
-* Embedded AI Helpers
-* BerryStudio integration
-* Flow visual editor
-* Webhook replay tools
-* Session dashboard
+```bash
+npm run build --workspace studio
+npm run build --workspace berryapi
+npm run start --workspace berryapi
+```
 
----
+Open `http://localhost:3000/studio` and enter the configured `API_KEY`.
+Static Studio pages are public so the login screen can load, while
+`/studio/api/*` remains protected by bearer authentication.
 
-# Support
+## Authentication
 
-If BerryProtocol helps your project:
+Use an API key with every protected request:
 
-* star the repository
-* contribute examples
-* open issues
-* share integrations
-* help improve documentation
+```http
+Authorization: Bearer berryapi_dev_key
+```
 
----
+Change the key in `.env`.
 
-# Contact
+## Create An Instance
 
-Need help with BerryProtocol?
+```bash
+curl -X POST http://localhost:3000/instance/create \
+  -H "Authorization: Bearer berryapi_dev_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceName": "store-01",
+    "authMethod": "qr"
+  }'
+```
 
-### Email
+## Connect With QR Code
 
-📧 **berrysdk@gmail.com**
+```bash
+curl -X GET http://localhost:3000/instance/connect/store-01 \
+  -H "Authorization: Bearer berryapi_dev_key"
+```
 
-### Discord
+Then fetch the connection state:
 
-💬 **ferronatin**
+```bash
+curl -X GET http://localhost:3000/instance/connectionState/store-01 \
+  -H "Authorization: Bearer berryapi_dev_key"
+```
 
-Feel free to contact us for support, bug reports, feature requests, or partnership inquiries.
+The response contains `qrCode` or `pairingCode` when needed.
 
----
+## Send A Message
 
-# Disclaimer
+```bash
+curl -X POST http://localhost:3000/message/sendText/store-01 \
+  -H "Authorization: Bearer berryapi_dev_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "5511999999999@s.whatsapp.net",
+    "text": "Hello from BerryAPI"
+  }'
+```
 
-BerryProtocol is an independent engineering project for interoperability and automation purposes.
+## Configure A Webhook
 
-It is not affiliated with or endorsed by WhatsApp.
+```bash
+curl -X POST http://localhost:3000/webhook/set/store-01 \
+  -H "Authorization: Bearer berryapi_dev_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enabled": true,
+    "url": "https://example.com/webhooks/berryapi",
+    "events": ["connection.update", "messages.upsert", "send.message"]
+  }'
+```
 
+## Realtime WebSocket
 
----
+Connect to:
+
+```text
+ws://localhost:3000/ws?apiKey=berryapi_dev_key
+```
+
+Or scope to one instance:
+
+```text
+ws://localhost:3000/ws?apiKey=berryapi_dev_key&instanceName=store-01
+```
+
+Realtime events include:
+- `connection.update`
+- `qrcode.updated`
+- `messages.upsert`
+- `messages.update`
+- `messages.delete`
+- `chats.update`
+- `contacts.update`
+- `groups.update`
+- `presence.update`
+- `send.message`
+
+## Docker
+
+```bash
+docker compose up --build
+```
+
+The API will be available on `http://localhost:3000`.
+
+## Message Endpoints
+
+BerryAPI includes modern WhatsApp Web message support such as:
+
+- text and extended text
+- reply, forward, delete, edit, react
+- image, video, audio, document, sticker, gif
+- buttons, template buttons, CTA buttons, copy buttons
+- carousel, lists and polls
+- contacts and locations
+- status and view once media
+- product, catalog and collection payloads
+- AI labeled text and carousel routes
+
+Dedicated modern routes include:
+
+- `POST /message/sendCarousel/:instanceName`
+- `POST /message/sendTemplateButtons/:instanceName`
+- `POST /message/sendCopyButton/:instanceName`
+- `POST /message/sendAiText/:instanceName`
+- `POST /message/sendAiCarousel/:instanceName`
+
+See Swagger docs at `/docs` for request bodies and examples.
+
+## Notes
+
+- Some chat/profile/group operations are registered already but return `501` until BerryProtocol exposes the required runtime hooks.
+- The API architecture isolates WhatsApp access behind `WhatsAppProvider`, so BerryProtocol can be swapped later without rewriting controllers.

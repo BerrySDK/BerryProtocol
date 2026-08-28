@@ -1,0 +1,33 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../auth"
+    },
+    {
+      "path": "../events"
+    },
+    {
+      "path": "../media"
+    },
+    {
+      "path": "../messages"
+    },
+    {
+      "path": "../socket"
+    },
+    {
+      "path": "../store"
+    }
+  ]
+}
+

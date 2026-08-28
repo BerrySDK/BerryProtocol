@@ -7,19 +7,18 @@
     "declarationMap": true,
     "sourceMap": true,
     "strict": true,
-    "skipLibCheck": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "outDir": "dist",
-    "rootDir": "src"
-  },
-  "include": [
-    "src/**/*.ts",
-    "Example/**/*.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@berrysdk/proto": [
+        "packages/protocol/src/index.ts"
+      ],
+      "@berrysdk/*": [
+        "packages/*/src/index.ts"
+      ]
+    }
+  }
 }
