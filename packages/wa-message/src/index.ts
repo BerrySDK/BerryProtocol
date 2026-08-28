@@ -368,8 +368,11 @@ export const legacyListAdditionalNodes = (): BinaryNode[] => [
   },
 ];
 
-export const listToInteractiveMessageContent = (list: ListPayload): Record<string, unknown> =>
-  interactivePayloadToMessageContent(listToInteractivePayload(list));
+export const listToInteractiveMessageContent = (list: ListPayload): Record<string, unknown> => ({
+  viewOnceMessage: {
+    message: interactivePayloadToMessageContent(listToInteractivePayload(list)),
+  },
+});
 
 export const extractInteractivePayload = (
   message: NonNullable<WAMessage["message"]>,

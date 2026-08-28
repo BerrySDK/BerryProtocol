@@ -20,7 +20,7 @@
         "access": "public"
     },
     "dependencies": {
-        "@berrysdk/core": "0.1.9",
+        "@berrysdk/core": "^0.1.9",
         "express": "^5.1.0",
         "pino": "^9.6.0"
     }

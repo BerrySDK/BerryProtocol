@@ -20,6 +20,6 @@
         "access": "public"
     },
     "dependencies": {
-        "@berrysdk/events": "0.1.4"
+        "@berrysdk/events": "^0.1.4"
     }
 }

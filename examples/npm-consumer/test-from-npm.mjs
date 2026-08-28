@@ -32,6 +32,7 @@ client.on("message.ack", (ack) => {
 
 async function main() {
   await client.connectWithQr();
+  await client.waitUntilConnected();
 
   const sent = await client.sendText(recipient, "Hello from berryprotocol on npm");
   console.log("TEXT SENT:", sent);

@@ -74,6 +74,34 @@ BerryAPI starts on:
 - `GET http://localhost:3000`
 - `GET http://localhost:3000/info`
 - `GET http://localhost:3000/docs`
+- `GET http://localhost:3000/studio`
+
+## Berry Studio
+
+Berry Studio is the shadcn/ui dashboard bundled with BerryAPI. It includes:
+
+- visual flow editing with React Flow
+- draft saving, validation and publishing
+- automatic WhatsApp triggers by instance and keyword
+- automatic continuation when a contact replies to a waiting flow
+- simulation without sending messages
+- real execution through a connected BerryProtocol instance
+- QR code and pairing-code connection management
+- nested `{{variable}}` interpolation in buttons, lists, carousels and JSON payloads
+- analytics, run logs and stored flow versions
+- all 34 message capabilities currently exposed by BerryAPI
+
+Build the frontend before starting the production API:
+
+```bash
+npm run build --workspace studio
+npm run build --workspace berryapi
+npm run start --workspace berryapi
+```
+
+Open `http://localhost:3000/studio` and enter the configured `API_KEY`.
+Static Studio pages are public so the login screen can load, while
+`/studio/api/*` remains protected by bearer authentication.
 
 ## Authentication
 

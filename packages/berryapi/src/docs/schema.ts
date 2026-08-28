@@ -6,7 +6,7 @@ export const envelopeSchema = {
   properties: {
     success: { type: "boolean" },
     message: { type: "string" },
-    data: { type: "object", additionalProperties: true },
+    data: {},
   },
 };
 
@@ -15,7 +15,7 @@ export const errorEnvelopeSchema = {
   properties: {
     success: { type: "boolean", enum: [false] },
     message: { type: "string" },
-    error: { type: "object", additionalProperties: true },
+    error: {},
   },
 };
 

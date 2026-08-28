@@ -7,6 +7,7 @@ import { BerryProtocolProvider } from "../providers/whatsapp/BerryProtocolProvid
 import type { ProviderEventPayload, ProviderSendOptions, WhatsAppProvider } from "../providers/whatsapp/WhatsAppProvider.js";
 import { WebhookDispatcher } from "../webhook/WebhookDispatcher.js";
 import { RealtimeGateway } from "../realtime/RealtimeGateway.js";
+import { logger } from "../utils/logger.js";
 
 type CreateInstanceInput = {
   instanceName: string;
@@ -50,6 +51,9 @@ const rowToInstance = (row: InstanceRow): InstanceRecord => ({
 
 export class InstanceManager {
   private readonly providers = new Map<string, WhatsAppProvider>();
+  private readonly eventListeners = new Set<
+    (event: ProviderEventPayload) => void | Promise<void>
+  >();
 
   constructor(
     private readonly realtime: RealtimeGateway,
@@ -119,9 +123,11 @@ export class InstanceManager {
       status: "connecting",
       connectionState: "connecting",
     });
-    await provider.connect({
+    void provider.connect({
       authMethod: instance.authMethod,
       phoneNumber: instance.phoneNumber,
+    }).catch((error) => {
+      logger.error({ err: error, instanceName }, "failed to connect instance");
     });
     return this.getInstance(instanceName);
   }
@@ -133,7 +139,9 @@ export class InstanceManager {
       status: "restarting",
       connectionState: "reconnecting",
     });
-    await provider.reconnect();
+    void provider.reconnect().catch((error) => {
+      logger.error({ err: error, instanceName }, "failed to restart instance");
+    });
     return this.getInstance(instanceName);
   }
 
@@ -239,6 +247,15 @@ export class InstanceManager {
     return provider.fetchGroups();
   }
 
+  onProviderEvent(
+    listener: (event: ProviderEventPayload) => void | Promise<void>,
+  ): () => void {
+    this.eventListeners.add(listener);
+    return () => {
+      this.eventListeners.delete(listener);
+    };
+  }
+
   async setWebhook(instanceName: string, input: Partial<WebhookConfig>): Promise<InstanceRecord> {
     const instance = await this.getInstance(instanceName);
     const webhook: WebhookConfig = {
@@ -339,6 +356,15 @@ export class InstanceManager {
     }
 
     this.realtime.broadcast(event);
+    for (const listener of this.eventListeners) {
+      void Promise.resolve(listener(event)).catch((error) => {
+        logger.error(
+          { err: error, instanceName, event: event.event },
+          "provider event listener failed",
+        );
+      });
+    }
+
     const instance = await this.getInstance(instanceName).catch(() => null);
     if (instance) {
       await this.webhooks.dispatch(instance.webhook, event);

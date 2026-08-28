@@ -76,3 +76,4 @@ client.on("message.received", async (message) => {
 });
 
 await client.connectWithQr();
+await client.waitUntilConnected();

@@ -1,10 +1,13 @@
 {
   "name": "@berrysdk/transport",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Internal BerrySDK WhatsApp Web engine and transport runtime.",
   "author": "BerrySDK",
   "license": "Apache-2.0",
   "type": "module",
+  "engines": {
+    "node": "20.x || >=22 <27"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -26,7 +29,7 @@
     "@cacheable/node-cache": "^1.4.0",
     "@hapi/boom": "^9.1.3",
     "async-mutex": "^0.5.0",
-    "libsignal": "git+https://github.com/whiskeysockets/libsignal-node",
+    "libsignal": "git+https://github.com/whiskeysockets/libsignal-node.git",
     "lru-cache": "^11.1.0",
     "music-metadata": "^11.12.3",
     "p-queue": "^9.0.0",

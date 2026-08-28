@@ -46,8 +46,7 @@ import {
   carouselPayloadToMessageContent,
   interactivePayloadToMessageContent,
   interactiveNativeFlowAdditionalNodes,
-  legacyListAdditionalNodes,
-  listToLegacyListMessageContent,
+  listToInteractiveMessageContent,
   normalizeIncomingMessage,
 } from "@berrysdk/wa-message";
 
@@ -179,6 +178,7 @@ export class BerrySocket {
   private reconnectAttempts = 0;
   private reconnectTimer?: NodeJS.Timeout;
   private manualClose = false;
+  private connected = false;
   private sock?: WASocket;
   private connectPromise?: Promise<void>;
   private authFolder?: string;
@@ -239,6 +239,7 @@ export class BerrySocket {
   async disconnect(reason = "manual"): Promise<void> {
     this.manualClose = true;
     clearTimeout(this.reconnectTimer);
+    this.connected = false;
     this.sock?.end(new Error(reason));
     this.sock?.ws.close();
     this.sock = undefined;
@@ -252,8 +253,13 @@ export class BerrySocket {
   async logout(): Promise<void> {
     this.manualClose = true;
     clearTimeout(this.reconnectTimer);
+    this.connected = false;
     await this.sock?.logout();
     this.sock = undefined;
+  }
+
+  isConnected(): boolean {
+    return this.connected && Boolean(this.sock?.user?.id);
   }
 
   async sendMessage(
@@ -362,7 +368,7 @@ export class BerrySocket {
     }
 
     const recipientJid = assertTransportJid(to);
-    const content = listToLegacyListMessageContent(list);
+    const content = listToInteractiveMessageContent(list);
     const fullMessage = generateWAMessageFromContent(recipientJid, content, {
       userJid: this.sock.user.id,
     });
@@ -370,7 +376,6 @@ export class BerrySocket {
 
     await this.sock.relayMessage(recipientJid, fullMessage.message!, {
       messageId: fullMessage.key.id!,
-      additionalNodes: legacyListAdditionalNodes(),
     });
 
     return fullMessage as WAMessage;
@@ -662,6 +667,7 @@ export class BerrySocket {
         }
 
         if (update.connection === "open") {
+          this.connected = true;
           this.reconnectAttempts = 0;
           this.bus.emit("connection.open", {
             sessionId: this.options.sessionId,
@@ -672,6 +678,7 @@ export class BerrySocket {
         }
 
         if (update.connection === "close") {
+          this.connected = false;
           const statusCode = getStatusCode(update.lastDisconnect?.error);
           const reason =
             statusCode === DisconnectReason.loggedOut

@@ -30,7 +30,7 @@ type InternalSocket = {
 };
 
 const client = new BerryProtocol({
-  sessionId: "self-contained-proto-types",
+  sessionId: "carousel-ai-example",
 });
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

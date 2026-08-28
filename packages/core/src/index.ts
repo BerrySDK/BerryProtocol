@@ -52,6 +52,10 @@ export interface BerryClientOptions {
   qrSmall?: boolean;
 }
 
+export interface ConnectFlowOptions {
+  waitForConnection?: boolean;
+}
+
 type BerryMediaSource = Buffer | { url: string | URL };
 const MAX_CAROUSEL_CARDS = 10;
 
@@ -189,22 +193,70 @@ export class BerryClient {
     await this.socket.connect(auth);
   }
 
-  async connectWithLink(): Promise<void> {
-    await this.connect({ method: "link" });
+  async connectWithLink(options?: ConnectFlowOptions): Promise<void> {
+    await this.connectForAuthFlow({ method: "link" }, "auth.link", options);
   }
 
-  async connectWithQr(): Promise<void> {
-    await this.connect({ method: "qr" });
+  async connectWithQr(options?: ConnectFlowOptions): Promise<void> {
+    await this.connectForAuthFlow({ method: "qr" }, "auth.qr", options);
   }
 
   async connectWithPairingCode(
     phoneNumber: string,
     customPairingCode?: string,
+    options?: ConnectFlowOptions,
   ): Promise<void> {
-    await this.connect({
-      method: "pairing_code",
-      phoneNumber,
-      customPairingCode,
+    await this.connectForAuthFlow(
+      {
+        method: "pairing_code",
+        phoneNumber,
+        customPairingCode,
+      },
+      "auth.pairing_code",
+      options,
+    );
+  }
+
+  async waitUntilConnected(timeoutMs = 120_000): Promise<void> {
+    if (this.socket.isConnected()) {
+      return;
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error(`Timed out waiting for WhatsApp connection after ${timeoutMs}ms.`));
+      }, timeoutMs);
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        this.bus.off("connection.open", handleOpen);
+        this.bus.off("auth.error", handleAuthError);
+        this.bus.off("connection.close", handleClose);
+      };
+
+      const handleOpen = () => {
+        cleanup();
+        resolve();
+      };
+
+      const handleAuthError = ({ error }: BerryEventMap["auth.error"]) => {
+        cleanup();
+        reject(new Error(error));
+      };
+
+      const handleClose = ({ reason }: BerryEventMap["connection.close"]) => {
+        if (reason === "restart_required") {
+          return;
+        }
+
+        cleanup();
+        reject(new Error(`WhatsApp connection closed before opening (${reason}).`));
+      };
+
+      this.bus.on("connection.open", handleOpen);
+      this.bus.on("auth.error", handleAuthError);
+      this.bus.on("connection.close", handleClose);
     });
   }
 
@@ -729,6 +781,62 @@ export class BerryClient {
     }
 
     throw new Error("Carousel media must provide url, path or buffer.");
+  }
+
+  private async connectForAuthFlow(
+    auth: BerryAuthOptions,
+    readyEvent: "auth.qr" | "auth.link" | "auth.pairing_code",
+    options?: ConnectFlowOptions,
+  ): Promise<void> {
+    if (options?.waitForConnection) {
+      await this.connect(auth);
+      return;
+    }
+
+    await this.sessions.get(this.options.sessionId);
+
+    const waitForArtifactOrOpen = new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        this.bus.off(readyEvent, handleReady);
+        this.bus.off("connection.open", handleOpen);
+        this.bus.off("auth.error", handleAuthError);
+        this.bus.off("connection.close", handleClose);
+      };
+
+      const handleReady = () => {
+        cleanup();
+        resolve();
+      };
+
+      const handleOpen = () => {
+        cleanup();
+        resolve();
+      };
+
+      const handleAuthError = ({ error }: BerryEventMap["auth.error"]) => {
+        cleanup();
+        reject(new Error(error));
+      };
+
+      const handleClose = ({ reason }: BerryEventMap["connection.close"]) => {
+        if (reason === "restart_required") {
+          return;
+        }
+
+        cleanup();
+        reject(new Error(`WhatsApp connection closed during auth flow (${reason}).`));
+      };
+
+      this.bus.on(readyEvent, handleReady);
+      this.bus.on("connection.open", handleOpen);
+      this.bus.on("auth.error", handleAuthError);
+      this.bus.on("connection.close", handleClose);
+    });
+
+    const connectPromise = this.socket.connect(auth);
+    void connectPromise.catch(() => undefined);
+
+    await Promise.race([waitForArtifactOrOpen, connectPromise]);
   }
 
   private bindInternals(): void {

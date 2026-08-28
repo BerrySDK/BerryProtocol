@@ -5,6 +5,7 @@ const client = new BerryProtocol({
 });
 
 await client.connectWithQr();
+await client.waitUntilConnected();
 
 const to = process.env.BERRY_TEST_TO;
 

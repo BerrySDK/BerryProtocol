@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 *.log
+.berry-dashboard.pid
 *.tgz
 coverage
 packages/*/dist

@@ -19,6 +19,8 @@ import { registerMessageRoutes } from "./modules/message/routes/message.routes.j
 import { registerChatRoutes } from "./modules/chat/chat.routes.js";
 import { registerProfileRoutes } from "./modules/profile/profile.routes.js";
 import { registerGroupRoutes } from "./modules/group/group.routes.js";
+import { registerFlowRoutes } from "./modules/flow/flow.routes.js";
+import { registerStudioRoutes } from "./modules/studio/studio.routes.js";
 import { WebhookDispatcher } from "./webhook/WebhookDispatcher.js";
 
 export const buildApp = async () => {
@@ -106,6 +108,8 @@ export const buildApp = async () => {
   await registerChatRoutes(app, manager);
   await registerProfileRoutes(app, manager);
   await registerGroupRoutes(app, manager);
+  await registerFlowRoutes(app, manager);
+  await registerStudioRoutes(app);
 
   return app;
 };

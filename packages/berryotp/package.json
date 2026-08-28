@@ -22,9 +22,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@berrysdk/berry-otp": "0.1.9"
-  },
+    "dependencies": {
+        "@berrysdk/berry-otp": "^0.1.9"
+    },
   "peerDependencies": {
     "berryprotocol": "^0.1.9"
   }

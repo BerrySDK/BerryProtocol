@@ -33,6 +33,7 @@ const client = new BerryClient({
 });
 
 await client.connectWithQr();
+await client.waitUntilConnected();
 
 const otp = BerryOTP.createLoginFlow(client, {
   issuer: "BerryProtocol",

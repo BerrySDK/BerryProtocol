@@ -5,6 +5,9 @@
     "author": "Lipe Devv and Berry Protocol",
     "license": "Apache-2.0",
     "type": "module",
+    "engines": {
+        "node": "20.x || >=22 <27"
+    },
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [

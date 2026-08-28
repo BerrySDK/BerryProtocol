@@ -6,22 +6,16 @@ const recipient = process.env.BERRY_TEST_TO ?? "55199991466943@s.whatsapp.net";
 const authMethod = process.env.BERRY_TEST_AUTH ?? "qr";
 const pairingPhone = process.env.BERRY_TEST_PHONE;
 
-function waitForOpen(client) {
-  return new Promise((resolve) => {
-    client.once("connection.open", (state) => {
-      console.log("🟢 CONECTADO:", state);
-      resolve(state);
-    });
-  });
-}
-
 async function safeTest(name, fn) {
   try {
-    console.log(`\n🧪 Testando: ${name}`);
+    console.log(`\n[Teste] ${name}`);
     const result = await fn();
-    console.log(`✅ OK: ${name}`, result ?? "");
+    console.log(`[OK] ${name}`, result ?? "");
   } catch (error) {
-    console.log(`❌ ERRO em ${name}:`, error instanceof Error ? error.message : error);
+    console.log(
+      `[ERRO] ${name}:`,
+      error instanceof Error ? error.message : error,
+    );
   }
 }
 
@@ -39,7 +33,7 @@ function buildClient() {
 async function connectClient(client) {
   if (authMethod === "pairing_code") {
     if (!pairingPhone) {
-      throw new Error("Define BERRY_TEST_PHONE para usar pairing_code.");
+      throw new Error("Defina BERRY_TEST_PHONE para usar pairing_code.");
     }
 
     await client.connectWithPairingCode(pairingPhone);
@@ -58,48 +52,52 @@ async function main() {
   const client = buildClient();
 
   client.on("auth.link", ({ value }) => {
-    console.log("\n🔗 Link gerado:");
+    console.log("\n[LINK]");
     console.log(value);
   });
 
   client.on("auth.qr", ({ value }) => {
-    console.log("\n📱 Escaneie este QR Code:");
+    console.log("\n[QR] Escaneie este QR Code:");
     qrcode.generate(value, { small: true });
   });
 
   client.on("auth.pairing_code", ({ code }) => {
-    console.log(`\n🔢 Pairing code: ${code}`);
+    console.log(`\n[PAIRING CODE] ${code}`);
   });
 
   client.on("auth.success", (data) => {
-    console.log("✅ AUTH SUCCESS:", data);
+    console.log("[AUTH SUCCESS]", data);
   });
 
   client.on("auth.error", (error) => {
-    console.log("❌ AUTH ERROR:", error);
+    console.log("[AUTH ERROR]", error);
+  });
+
+  client.on("connection.open", (state) => {
+    console.log("[CONECTADO]", state);
   });
 
   client.on("connection.close", (state) => {
-    console.log("🔴 DESCONECTADO:", state);
+    console.log("[DESCONECTADO]", state);
   });
 
   client.on("message.received", (message) => {
-    console.log("📩 MESSAGE RECEIVED:", message);
+    console.log("[MESSAGE RECEIVED]", message);
   });
 
-  console.log(`🚀 Conectando com auth=${authMethod}...`);
-  const opened = waitForOpen(client);
+  console.log(`[INICIO] Conectando com auth=${authMethod}...`);
+
   await connectClient(client);
-  await opened;
+  await client.waitUntilConnected();
 
   await safeTest("sendText", () =>
-    client.sendText(recipient, "🚀 Teste de texto BerryProtocol"),
+    client.sendText(recipient, "Teste de texto BerryProtocol"),
   );
 
   await safeTest("sendImage", () =>
     client.sendImage(recipient, {
       url: "https://picsum.photos/600/400",
-      caption: "🖼 Teste de imagem BerryProtocol",
+      caption: "Teste de imagem BerryProtocol",
     }),
   );
 
@@ -115,24 +113,24 @@ async function main() {
       url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
       fileName: "teste.pdf",
       mimetype: "application/pdf",
-      caption: "📄 Teste de documento BerryProtocol",
+      caption: "Teste de documento BerryProtocol",
     }),
   );
 
   await safeTest("sendButtons", () =>
     client.sendButtons(recipient, {
-      text: "Escolha uma opção",
+      text: "Escolha uma opcao",
       footer: "BerryProtocol",
       buttons: [
-        { id: "btn_1", title: "Opção 1" },
-        { id: "btn_2", title: "Opção 2" },
+        { id: "btn_1", title: "Opcao 1" },
+        { id: "btn_2", title: "Opcao 2" },
       ],
     }),
   );
 
   await safeTest("sendList", () =>
     client.sendList(recipient, {
-      title: "🍔 Cardápio",
+      title: "Cardapio",
       text: "Escolha um lanche",
       footer: "BerryProtocol",
       buttonText: "Abrir lista",
@@ -143,7 +141,7 @@ async function main() {
             {
               id: "xburger",
               title: "X-Burger",
-              description: "Pão, carne e queijo",
+              description: "Pao, carne e queijo",
             },
             {
               id: "xbacon",
@@ -182,10 +180,10 @@ async function main() {
   await safeTest("sendPresence", () => client.sendPresence("composing", recipient));
   await safeTest("fetchGroups", () => client.fetchGroups());
 
-  console.log("\n✅ Todos os testes executados.");
+  console.log("\n[FINALIZADO] Todos os testes executados.");
 }
 
 main().catch((error) => {
-  console.error("❌ Falha fatal:", error);
+  console.error("[FATAL]", error);
   process.exitCode = 1;
 });

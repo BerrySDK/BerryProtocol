@@ -23,6 +23,6 @@
         "access": "public"
     },
     "dependencies": {
-        "@berrysdk/core": "0.1.9"
+        "@berrysdk/core": "^0.1.9"
     }
 }
