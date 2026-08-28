@@ -1,0 +1,5 @@
+.github/
+Example/
+src/
+tsconfig.json
+tsconfig.build.json
