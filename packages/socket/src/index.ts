@@ -376,6 +376,7 @@ export class BerrySocket {
 
     await this.sock.relayMessage(recipientJid, fullMessage.message!, {
       messageId: fullMessage.key.id!,
+      additionalNodes: interactiveNativeFlowAdditionalNodes(),
     });
 
     return fullMessage as WAMessage;

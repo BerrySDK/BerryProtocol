@@ -1,9 +1,12 @@
 import { BerryProtocol } from "../../packages/core/src/index.ts";
 import { BerryOTP } from "../../packages/berry-otp/src/index.ts";
+import { BerryEventBus } from "../../packages/events/src/index.ts";
+import { BerrySocket } from "../../packages/socket/src/index.ts";
 import {
   buttonsPayloadToNativeFlowInteractiveContent,
   carouselPayloadToMessageContent,
-  listToLegacyListMessageContent,
+  interactiveNativeFlowAdditionalNodes,
+  listToInteractiveMessageContent,
   normalizeIncomingMessage,
 } from "../../packages/wa-message/src/index.ts";
 
@@ -43,7 +46,7 @@ const runLocalMatrix = () => {
   assert(interactiveButtons[1]?.name === "cta_copy", "second button should be cta_copy");
   assert(interactiveButtons[2]?.name === "cta_url", "third button should be cta_url");
 
-  const listPayload = listToLegacyListMessageContent({
+  const listPayload = listToInteractiveMessageContent({
     title: "Menu",
     text: "Escolha uma categoria",
     footer: "BerryProtocol",
@@ -54,9 +57,18 @@ const runLocalMatrix = () => {
     ],
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const listMessage = (listPayload as any).listMessage;
-  assert(listMessage?.sections?.length === 2, "legacy list should preserve two sections");
-  assert(listMessage?.buttonText === "Abrir lista", "legacy list should preserve button text");
+  const listButton = (listPayload as any).viewOnceMessage?.message?.interactiveMessage
+    ?.nativeFlowMessage?.buttons?.[0];
+  const listParams = JSON.parse(listButton?.buttonParamsJson ?? "{}");
+  assert(listButton?.name === "single_select", "list should use the current single_select native flow");
+  assert(listParams.sections?.length === 2, "interactive list should preserve two sections");
+  assert(listParams.title === "Abrir lista", "interactive list should preserve button text");
+
+  const listRelayNodes = interactiveNativeFlowAdditionalNodes();
+  const nativeFlowNode = (listRelayNodes[0]?.content as any[])?.[0]?.content?.[0];
+  assert(listRelayNodes[0]?.tag === "biz", "interactive list relay should include the biz node");
+  assert(nativeFlowNode?.tag === "native_flow", "interactive list relay should include native_flow metadata");
+  assert(nativeFlowNode?.attrs?.name === "mixed", "interactive list should use the mixed native flow");
 
   const carouselPayload = carouselPayloadToMessageContent({
     text: "Confira nossas pizzas",
@@ -113,6 +125,31 @@ const runLocalMatrix = () => {
   assert(normalized?.buttonId === "pizza_calabresa", "incoming message should parse interactive button id");
 
   console.log("Local compatibility matrix passed.");
+};
+
+const runListRelayRegression = async () => {
+  let relayOptions: { additionalNodes?: Array<{ tag?: string }> } | undefined;
+  const socket = new BerrySocket({ sessionId: "list-relay-regression" }, new BerryEventBus());
+
+  // Inject a minimal connected transport so this regression stays local and never contacts WhatsApp.
+  (socket as any).sock = {
+    user: { id: "5511999999999:1@s.whatsapp.net" },
+    relayMessage: async (_jid: string, _message: unknown, options: typeof relayOptions) => {
+      relayOptions = options;
+    },
+  };
+
+  await socket.sendListMessage("5511888888888@s.whatsapp.net", {
+    text: "Escolha uma opcao",
+    buttonText: "Abrir lista",
+    sections: [section("Opcoes", [{ id: "one", title: "Opcao 1" }])],
+  });
+
+  assert(
+    relayOptions?.additionalNodes?.some((node) => node.tag === "biz"),
+    "sendListMessage must relay native-flow metadata",
+  );
+  console.log("List relay regression passed.");
 };
 
 const waitForOpen = (client: BerryProtocol) =>
@@ -288,4 +325,5 @@ const runLiveMatrix = async () => {
 };
 
 runLocalMatrix();
+await runListRelayRegression();
 await runLiveMatrix();
